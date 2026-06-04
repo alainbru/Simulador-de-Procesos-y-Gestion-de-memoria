@@ -330,7 +330,11 @@ function ejecutarMem(algo){
       } else noAsig.push({...proc,motivo:'Sin partición disponible'});
     }
     renderMapaFijo(bloques,tamPartes,total);
-    document.getElementById('m-frag').textContent=asig.reduce((a,r)=>a+r.fragInterna,0)+' KB';
+    const fragInterna=asig.reduce((a,r)=>a+r.fragInterna,0);
+    const fragExterna=bloques.filter(b=>!b.pid).reduce((a,b)=>a+b.tam,0);
+    document.getElementById('m-frag').textContent=fragInterna+' KB';
+    document.getElementById('m-frag-ext').textContent=fragExterna+' KB';
+    document.getElementById('m-frag-status').textContent=`Int: ${fragInterna>0?'Sí':'No'} | Ext: ${fragExterna>0?'Sí':'No'}`;
   } else {
     const mem=[{base:0,tam:total,pid:null}];
     for(const proc of procesos){
@@ -345,7 +349,10 @@ function ejecutarMem(algo){
       } else noAsig.push({...proc,motivo:'Sin espacio suficiente'});
     }
     renderMapaDin(mem,total);
+    const fragExterna=mem.filter(b=>!b.pid).reduce((a,b)=>a+b.tam,0);
     document.getElementById('m-frag').textContent='—';
+    document.getElementById('m-frag-ext').textContent=fragExterna+' KB';
+    document.getElementById('m-frag-status').textContent=`Int: No | Ext: ${fragExterna>0?'Sí':'No'}`;
   }
 
   const usada=asig.reduce((a,b)=>a+b.tam,0);
@@ -397,7 +404,7 @@ function limpiarMem(){
   Object.keys(PROC_COLORS).forEach(k=>delete PROC_COLORS[k]); colorIdx=0;
   document.getElementById('mem-visual').innerHTML='<div class="mv-block" style="flex:1;background:#1a2a1a;color:#4caf5088;font-size:12px">LIBRE</div>';
   document.getElementById('mem-bar').textContent='—';
-  ['m-usada','m-libre','m-algo','m-frag'].forEach(id=>document.getElementById(id).textContent='—');
+  ['m-usada','m-libre','m-algo','m-frag','m-frag-ext','m-frag-status'].forEach(id=>document.getElementById(id).textContent='—');
   document.getElementById('m-asig').textContent='0'; document.getElementById('m-rech').textContent='0';
   document.getElementById('tbl-mem').innerHTML='<tr><td colspan="6" style="text-align:center;color:#5a5a5a;padding:16px">Sin asignaciones.</td></tr>';
   document.getElementById('tbl-noasig').innerHTML='<tr><td colspan="3" style="text-align:center;color:#5a5a5a;padding:16px">Sin rechazados.</td></tr>';
