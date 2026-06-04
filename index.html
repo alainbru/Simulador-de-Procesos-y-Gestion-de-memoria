@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Simulador OS</title>
-<link rel="stylesheet" href="styles.css">
+<link href="styles.css" rel="stylesheet">
 </head>
 <body>
 
@@ -68,35 +68,60 @@
   </div>
 
   <div class="pages-wrap">
-    <!-- PAGE PROCESOS -->
+
+    <!-- ═══════════════ PAGE PROCESOS ═══════════════ -->
     <div class="page active" id="page-procesos">
       <div class="content">
-        <div class="left-panel">
-          <div>
-            <div class="section-label">Agregar proceso</div>
-            <div class="input-row">
-              <div class="field"><label>ID</label><input id="inp-id" placeholder="P1"></div>
-              <div class="field"><label>Llegada</label><input id="inp-arr" type="number" min="0" placeholder="0"></div>
-              <div class="field"><label>T.Servicio</label><input id="inp-cpu" type="number" min="1" placeholder="5"></div>
-              <div class="field"><label>Tamaño(KB)</label><input id="inp-tam" type="number" min="1" placeholder="100"></div>
-              <div class="field" style="display:flex;align-items:flex-end">
-                <button class="btn accent" style="width:100%" onclick="agregarProceso()">+ Agregar</button>
-              </div>
-            </div>
-            <div class="btn-row">
-              <div style="display:flex;align-items:center;gap:6px">
-                <label style="font-size:11px;color:#8a8a8a;white-space:nowrap">Quantum:</label>
-                <input id="inp-q" type="number" min="1" placeholder="2" style="width:55px;padding:4px 6px;background:#2a2a2a;border:1px solid #3a3a3a;border-radius:3px;color:#e0e0e0;font-size:12px;outline:none">
-              </div>
+
+        <!-- LEFT: formulario + gantt + tabla (scroll vertical) -->
+        <div class="left-panel" style="overflow-y:auto;padding:14px;gap:10px">
+
+          <!-- Formulario -->
+          <div class="section-label">Agregar proceso</div>
+          <div class="input-row">
+            <div class="field"><label>ID</label><input id="inp-id" placeholder="P1"></div>
+            <div class="field"><label>Llegada</label><input id="inp-arr" type="number" min="0" placeholder="0"></div>
+            <div class="field"><label>T.Servicio</label><input id="inp-cpu" type="number" min="1" placeholder="5"></div>
+            <div class="field"><label>Tamaño(KB)</label><input id="inp-tam" type="number" min="1" placeholder="100"></div>
+            <div class="field" style="display:flex;align-items:flex-end">
+              <button class="btn accent" style="width:100%" onclick="agregarProceso()">+ Agregar</button>
             </div>
           </div>
-          <div class="divider"></div>
-          <div class="collapsible">
-            <div class="coll-hdr open" onclick="toggleColl(this)">
-              <span>📋 Tabla de Procesos</span><span class="coll-arrow">▶</span>
+          <div class="btn-row">
+            <div style="display:flex;align-items:center;gap:6px">
+              <label style="font-size:11px;color:#8a8a8a;white-space:nowrap">Quantum:</label>
+              <input id="inp-q" type="number" min="1" placeholder="2" style="width:55px;padding:4px 6px;background:#2a2a2a;border:1px solid #3a3a3a;border-radius:3px;color:#e0e0e0;font-size:12px;outline:none">
             </div>
-            <div class="coll-body open">
-              <div class="table-wrap">
+          </div>
+
+          <div class="divider"></div>
+
+          <!-- Gantt -->
+          <div class="section-label">Diagrama de Gantt</div>
+          <div class="gantt-outer">
+            <div class="gantt-hdr">
+              <span>Ejecución</span>
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="font-size:10px;color:#5a5a5a">Vel:</span>
+                <input type="range" id="vel" min="1" max="5" value="3" style="width:70px;accent-color:#4fc3f7;height:4px;cursor:pointer">
+                <span id="gantt-info" style="font-size:11px">—</span>
+              </div>
+            </div>
+            <div class="gantt-scroll">
+              <div id="gantt-canvas" class="gantt-row"><span style="color:#4a4a4a;font-size:11px;align-self:center">Esperando ejecución...</span></div>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <!-- Tabla DEBAJO del gantt con toggle -->
+          <div style="border:1px solid #2d2d2d;border-radius:4px;overflow:hidden">
+            <div id="tbl-proc-hdr" onclick="toggleTabla()" style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#252525;cursor:pointer;user-select:none;font-size:12px;color:#c0c0c0">
+              <span>📋 Tabla de Procesos</span>
+              <span id="tbl-proc-arrow" style="font-size:10px;color:#7a7a7a;transition:transform .2s;display:inline-block;transform:rotate(90deg)">▶</span>
+            </div>
+            <div id="tbl-proc-body" style="overflow-y:auto;max-height:500px;transition:max-height .3s ease">
+              <div class="table-wrap" style="border:none;border-radius:0">
                 <table>
                   <thead><tr><th>ID</th><th>Llegada</th><th>T.Serv</th><th>Tam</th><th>Inicio</th><th>Fin</th><th>Espera</th><th>Retorno</th></tr></thead>
                   <tbody id="tbl-proc"><tr><td colspan="8" style="text-align:center;color:#5a5a5a;padding:16px">Sin procesos.</td></tr></tbody>
@@ -104,25 +129,10 @@
               </div>
             </div>
           </div>
-          <div class="divider"></div>
-          <div>
-            <div class="section-label">Diagrama de Gantt</div>
-            <div class="gantt-outer">
-              <div class="gantt-hdr">
-                <span>Ejecución</span>
-                <div style="display:flex;align-items:center;gap:8px">
-                  <span style="font-size:10px;color:#5a5a5a">Vel:</span>
-                  <input type="range" id="vel" min="1" max="5" value="3" style="width:70px;accent-color:#4fc3f7;height:4px;cursor:pointer">
-                  <span id="gantt-info" style="font-size:11px">—</span>
-                </div>
-              </div>
-              <div class="gantt-scroll">
-                <div id="gantt-canvas" class="gantt-row"><span style="color:#4a4a4a;font-size:11px">Esperando ejecución...</span></div>
-              </div>
-            </div>
-          </div>
+
         </div>
-        <!-- RIGHT PANEL PROCESOS -->
+
+        <!-- RIGHT -->
         <div class="right-panel">
           <div class="section-label">Resultados</div>
           <div class="stat-block"><div class="lbl">Prom. Espera</div><div class="val" id="avg-e">—</div><div class="sub">ut</div></div>
@@ -136,46 +146,51 @@
           <div class="info-row"><span class="k">Expulsiones</span><span class="v" id="d-exp">—</span></div>
           <div class="info-row"><span class="k">Modo</span><span class="v" id="d-modo">—</span></div>
         </div>
+
       </div>
     </div>
 
-    <!-- PAGE MEMORIA -->
+    <!-- ═══════════════ PAGE MEMORIA ═══════════════ -->
     <div class="page" id="page-memoria">
       <div class="content">
-        <div class="left-panel">
-          <div style="flex-shrink:0">
-            <div class="section-label">Configuración</div>
-            <div class="input-row">
-              <div class="field"><label>Memoria Total (KB)</label><input id="mem-total" type="number" value="1024" min="1"></div>
-            </div>
+
+        <div class="left-panel" style="overflow-y:auto;padding:14px;gap:10px">
+
+          <!-- Config -->
+          <div class="section-label">Configuración</div>
+          <div class="input-row">
+            <div class="field"><label>Memoria Total (KB)</label><input id="mem-total" type="number" value="1024" min="1"></div>
+          </div>
+          <div class="btn-row">
+            <label class="toggle-check">
+              <input type="checkbox" id="chk-fija" onchange="toggleFija()"> Particiones Fijas
+            </label>
+          </div>
+          <div id="panel-fija" style="display:none;margin-top:4px;padding:10px;background:#1e2030;border:1px solid #2d3050;border-radius:4px">
+            <div style="font-size:11px;color:#7a7a7a;margin-bottom:6px">PARTICIONES (KB)</div>
+            <div id="part-list"></div>
             <div class="btn-row">
-              <label class="toggle-check">
-                <input type="checkbox" id="chk-fija" onchange="toggleFija()"> Particiones Fijas
-              </label>
-            </div>
-            <div id="panel-fija" style="display:none;margin-top:8px;padding:10px;background:#1e2030;border:1px solid #2d3050;border-radius:4px">
-              <div style="font-size:11px;color:#7a7a7a;margin-bottom:6px">PARTICIONES (KB)</div>
-              <div id="part-list"></div>
-              <div class="btn-row">
-                <button class="btn accent" style="font-size:11px;padding:4px 10px" onclick="addPart()">+ Agregar</button>
-                <button class="btn" style="font-size:11px;padding:4px 10px" onclick="delPart()">− Quitar</button>
-              </div>
+              <button class="btn accent" style="font-size:11px;padding:4px 10px" onclick="addPart()">+ Agregar</button>
+              <button class="btn" style="font-size:11px;padding:4px 10px" onclick="delPart()">− Quitar</button>
             </div>
           </div>
-          <div class="divider" style="flex-shrink:0"></div>
-          <!-- Mapa visual crece -->
-          <div style="flex:1;display:flex;flex-direction:column;min-height:80px">
-            <div class="section-label">Mapa de Memoria</div>
-            <div id="mem-visual" class="mem-visual" style="flex:1;height:auto;min-height:60px"><div class="mv-block" style="flex:1;background:#1a2a1a;color:#3a5a3a">LIBRE</div></div>
-            <div id="mem-bar" style="font-size:10px;color:#5a5a5a;margin-top:4px;flex-shrink:0">—</div>
-          </div>
-          <div class="divider" style="flex-shrink:0"></div>
-          <!-- Tabla asignados DEBAJO -->
-          <div class="collapsible" style="flex-shrink:0">
-            <div class="coll-hdr open" onclick="toggleColl(this)">
-              <span>📋 Tabla de Asignación</span><span class="coll-arrow">▶</span>
+
+          <div class="divider"></div>
+
+          <!-- Mapa visual -->
+          <div class="section-label">Mapa de Memoria</div>
+          <div id="mem-visual" class="mem-visual" style="height:120px"><div class="mv-block" style="flex:1;background:#1a2a1a;color:#4caf5088;font-size:12px">LIBRE</div></div>
+          <div id="mem-bar" style="font-size:10px;color:#5a5a5a;margin-top:2px">—</div>
+
+          <div class="divider"></div>
+
+          <!-- Tabla asignados -->
+          <div class="table-section">
+            <div class="table-section-header" onclick="toggleSection('tbl-mem')">
+              <span>📋 Tabla de Asignación</span>
+              <span id="tbl-mem-arrow" class="section-arrow">▶</span>
             </div>
-            <div class="coll-body open">
+            <div class="table-section-body open" id="tbl-mem-body">
               <div class="table-wrap">
                 <table>
                   <thead><tr><th>Proceso</th><th>Tamaño</th><th>Partición</th><th>Base</th><th>Límite</th><th>Estado</th></tr></thead>
@@ -184,12 +199,16 @@
               </div>
             </div>
           </div>
-          <div class="divider" style="flex-shrink:0"></div>
-          <div class="collapsible" style="flex-shrink:0">
-            <div class="coll-hdr" onclick="toggleColl(this)">
-              <span>⚠️ No Asignados</span><span class="coll-arrow">▶</span>
+
+          <div class="divider"></div>
+
+          <!-- Tabla rechazados -->
+          <div class="table-section">
+            <div class="table-section-header" onclick="toggleSection('tbl-noasig')">
+              <span>⚠️ No Asignados</span>
+              <span id="tbl-noasig-arrow" class="section-arrow">▶</span>
             </div>
-            <div class="coll-body">
+            <div class="table-section-body open" id="tbl-noasig-body">
               <div class="table-wrap">
                 <table>
                   <thead><tr><th>Proceso</th><th>Tamaño</th><th>Motivo</th></tr></thead>
@@ -198,8 +217,10 @@
               </div>
             </div>
           </div>
+
         </div>
-        <!-- RIGHT PANEL MEMORIA -->
+
+        <!-- RIGHT MEM -->
         <div class="right-panel">
           <div class="section-label">Resultados</div>
           <div class="stat-block"><div class="lbl">Memoria Usada</div><div class="val" id="m-usada">—</div><div class="sub">KB</div></div>
@@ -212,11 +233,13 @@
           <div class="info-row"><span class="k">Frag. Interna</span><span class="v" id="m-frag">—</span></div>
           <div class="info-row"><span class="k">Modo</span><span class="v" id="m-modo">Dinámica</span></div>
         </div>
+
       </div>
     </div>
-  </div>
-</div>
 
-<script src="script.js"> </script>
+  </div><!-- /pages-wrap -->
+</div><!-- /main -->
+
+<script src="script.js"></script>
 </body>
 </html>
