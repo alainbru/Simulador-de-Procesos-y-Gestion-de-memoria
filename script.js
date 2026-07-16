@@ -26,13 +26,15 @@ function showPage(name){
   document.getElementById('btns-plan').style.display=name==='plan'?'flex':'none';
   document.getElementById('btns-mem').style.display=name==='mem'?'flex':'none';
   document.getElementById('btns-alm').style.display=name==='alm'?'flex':'none';
+  const almTop=document.getElementById('alm-top-controls');
+  if(almTop) almTop.style.display=name==='alm'?'flex':'none';
   if(document.getElementById('grp-'+name)) document.getElementById('grp-'+name).classList.add('active-g');
 }
 function togColl(hdr){hdr.classList.toggle('open');hdr.nextElementSibling.classList.toggle('open');}
 
 // ─── DATA ───
 let procesos=[], animId=null, colorMap={};
-let archivos=[];
+let archivos=[], almAnimId=null;
 const PAL=['rgba(21,101,192,.6)','rgba(46,125,50,.6)','rgba(106,27,154,.6)','rgba(198,40,40,.6)',
            'rgba(230,81,0,.6)','rgba(0,105,92,.6)','rgba(69,39,160,.6)','rgba(173,20,87,.6)',
            'rgba(2,119,189,.6)','rgba(85,139,47,.6)'];
@@ -47,24 +49,57 @@ function getColor(pid){
 }
 
 // ─── CSV GLOBAL ───
+function normalizarCabecera(h){
+  return String(h||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'');
+}
+function parseCSVRows(txt){
+  const d=txt.includes(';')?';':',';
+  const lines=txt.trim().split(/\r?\n/).filter(l=>l.trim()!=='');
+  if(!lines.length)return {headers:[],rows:[]};
+  const headers=lines[0].split(d).map(h=>normalizarCabecera(h));
+  const rows=lines.slice(1).map(line=>{
+    const cols=line.split(d).map(c=>c.trim().replace(/\r/g,''));
+    const row={}; headers.forEach((h,idx)=>row[h]=cols[idx]);
+    return row;
+  });
+  return {headers,rows};
+}
 function cargarCSV(e){
   const f=e.target.files[0]; if(!f)return;
   const r=new FileReader();
   r.onload=ev=>{
-    const txt=ev.target.result, d=txt.includes(';')?';':',';
-    const lines=txt.trim().split('\n');
-    const hdrs=lines[0].split(d).map(h=>h.trim().toLowerCase().replace(/\r/g,''));
-    procesos=[];
-    for(let i=1;i<lines.length;i++){
-      const cols=lines[i].split(d).map(c=>c.trim().replace(/\r/g,''));
-      const row={}; hdrs.forEach((h,idx)=>row[h]=cols[idx]);
-      const id=row['proceso']||row['id']||row['p'];
-      const arr=row['tiempo_llegada']||row['llegada']||row['arrival'];
-      const cpu=row['tiempo_ejecucion']||row['rafaga']||row['burst']||row['t. servicio'];
-      const tam=row['tamano']||row['tamaño']||row['size']||'0';
-      if(!id||arr===undefined||cpu===undefined)continue;
-      procesos.push({id:id.trim(),llegada:parseInt(arr)||0,rafaga:parseInt(cpu)||1,restante:parseInt(cpu)||1,tamano:parseInt(tam)||0});
+    const txt=ev.target.result;
+    const {rows}=parseCSVRows(txt);
+    const activePage=document.querySelector('.page.active')?.id||'';
+    const isStorage=activePage==='page-alm';
+
+    if(isStorage){
+      archivos=[];
+      rows.forEach(row=>{
+        const nom=row['archivo']||row['nombre']||row['nom']||row['file']||row['id']||row['proceso'];
+        const tamVal=row['tamano']||row['tam']||row['size']||row['tamanio']||row['tamaño']||row['tamkb'];
+        const unidad=row['unidad']||row['u']||row['unit']||'KB';
+        if(!nom||tamVal===undefined)return;
+        const tamNum=parseFloat(tamVal);
+        const tamKB=almKB(tamNum, unidad);
+        const bloqReq=Math.ceil(tamKB/(blkKB()||4));
+        archivos.push({nom:String(nom).trim(),tamKB,bloqReq,met:'',u:unidad,tam:tamNum||0});
+      });
+      renderTblArch();
+      const aNarch=document.getElementById('a-narch'); if(aNarch)aNarch.textContent=archivos.length;
+      document.getElementById('csv-inf').textContent=archivos.length+' arch.';
+      return;
     }
+
+    procesos=[];
+    rows.forEach(row=>{
+      const id=row['proceso']||row['id']||row['p']||row['archivo']||row['nombre']||row['nom'];
+      const arr=row['tiempollegada']||row['llegada']||row['arrival']||row['tllegada'];
+      const cpu=row['tiempoejecucion']||row['rafaga']||row['burst']||row['tservicio']||row['tserv'];
+      const tam=row['tamano']||row['tam']||row['size']||row['tamaño']||'0';
+      if(!id||arr===undefined||cpu===undefined)return;
+      procesos.push({id:String(id).trim(),llegada:parseInt(arr)||0,rafaga:parseInt(cpu)||1,restante:parseInt(cpu)||1,tamano:parseInt(tam)||0});
+    });
     renderTblProc();
     document.getElementById('d-procs').textContent=procesos.length;
     document.getElementById('csv-inf').textContent=procesos.length+' proc.';
@@ -300,6 +335,10 @@ function limpiarMem(){
 }
 
 // ─── ALMACENAMIENTO ───
+function getMetodoAlm(){
+  const sel=document.getElementById('alm-metodo');
+  return sel&&sel.value?sel.value:'contigua';
+}
 function almKB(tam,unit){return unit==='MB'?tam*1024:unit==='GB'?tam*1024*1024:tam;}
 function discoTotalKB(){
   const cap=parseFloat(document.getElementById('d-cap').value)||512;
@@ -313,7 +352,7 @@ function addArchivo(){
   const nom=document.getElementById('a-nom').value.trim();
   const tam=parseFloat(document.getElementById('a-tam').value);
   const u=document.getElementById('a-tam-u').value;
-  const met=document.getElementById('a-met').value;
+  const met=getMetodoAlm();
   if(!nom||isNaN(tam)||tam<=0){alert('Completa nombre y tamaño.');return;}
   const tamKB=almKB(tam,u);
   const bloqReq=Math.ceil(tamKB/blkKB());
@@ -328,68 +367,14 @@ function renderTblArch(){
   if(!archivos.length){tb.innerHTML='<tr><td colspan="4" style="text-align:center;color:#5a5a5a;padding:14px">Sin archivos.</td></tr>';return;}
   tb.innerHTML=archivos.map(a=>`
     <tr><td class="pid">${a.nom}</td><td>${a.tam} ${a.u}</td><td>${a.bloqReq}</td>
-    <td style="color:#4fc3f7;text-transform:capitalize">${a.met}</td></tr>`).join('');
+    <td style="color:#4fc3f7;text-transform:capitalize">${a.met||'—'}</td></tr>`).join('');
 }
 
-function ejAlm(){
-  if(!archivos.length){alert('Agrega archivos primero.');return;}
-  const totB=totalBloques();
-  const bkKb=blkKB();
-  // Estado del disco: array de bloques {libre, archivo, tipo}
-  const disco=Array.from({length:totB},(_,i)=>({id:i,libre:true,archivo:null,tipo:null}));
-  const resul=[],noAsig=[];
-  let fragTotal=0, idxBlocks=0;
-  const archColorMap={};
-  let ci=0;
-
-  for(const arch of archivos){
-    archColorMap[arch.nom]=ACOLS[ci++%ACOLS.length];
-    const libres=disco.filter(b=>b.libre);
-    if(libres.length<arch.bloqReq){noAsig.push({...arch,motivo:'Espacio insuficiente'});continue;}
-
-    let asignados=[];
-    if(arch.met==='contigua'){
-      // Buscar bloque contiguo libre
-      let start=-1, count=0;
-      for(let i=0;i<disco.length;i++){
-        if(disco[i].libre){count++;if(count===1)start=i;if(count===arch.bloqReq)break;}
-        else{count=0;start=-1;}
-      }
-      if(count<arch.bloqReq){noAsig.push({...arch,motivo:'No hay espacio contiguo'});continue;}
-      for(let i=start;i<start+arch.bloqReq;i++){disco[i].libre=false;disco[i].archivo=arch.nom;disco[i].tipo='contigua';asignados.push(i);}
-      // Fragmentación interna (último bloque)
-      const tamUltimo=arch.tamKB-(arch.bloqReq-1)*bkKb;
-      fragTotal+=bkKb-tamUltimo;
-    } else if(arch.met==='enlazada'){
-      let count=0;
-      for(let i=0;i<disco.length&&count<arch.bloqReq;i++){
-        if(disco[i].libre){disco[i].libre=false;disco[i].archivo=arch.nom;disco[i].tipo=count<arch.bloqReq-1?'enlazada':'enlazada-fin';asignados.push(i);count++;}
-      }
-      const tamUltimo=arch.tamKB-(arch.bloqReq-1)*bkKb;
-      fragTotal+=bkKb-tamUltimo;
-    } else {
-      // Indexada: 1 bloque índice + bloqReq bloques datos
-      const needed=arch.bloqReq+1;
-      if(libres.length<needed){noAsig.push({...arch,motivo:'Espacio insuficiente (índice)'});continue;}
-      let count=0, idxB=-1;
-      for(let i=0;i<disco.length&&count<=arch.bloqReq;i++){
-        if(disco[i].libre){
-          if(count===0){idxB=i;disco[i].libre=false;disco[i].archivo=arch.nom;disco[i].tipo='indice';asignados.push(i);}
-          else{disco[i].libre=false;disco[i].archivo=arch.nom;disco[i].tipo='indexada';asignados.push(i);}
-          count++;
-        }
-      }
-      idxBlocks++;
-      const tamUltimo=arch.tamKB-(arch.bloqReq-1)*bkKb;
-      fragTotal+=bkKb-tamUltimo;
-    }
-    resul.push({...arch,bloqAsig:asignados,estado:'Asignado'});
-  }
-
-  // Render grid
+function renderAlmState(disco, archColorMap, totB, bkKb, resul, noAsig, fragTotal, idxBlocks, archivos, metodoSel){
   const cols=16;
-  document.getElementById('disco-grid').style.gridTemplateColumns=`repeat(${cols},1fr)`;
-  document.getElementById('disco-grid').innerHTML=disco.map(b=>{
+  const grid=document.getElementById('disco-grid');
+  grid.style.gridTemplateColumns=`repeat(${cols},1fr)`;
+  grid.innerHTML=disco.map(b=>{
     if(b.libre) return `<div class="blk libre" title="Bloque ${b.id} — Libre">${b.id}</div>`;
     const col=archColorMap[b.archivo]||'#555';
     const cls=b.tipo==='indice'?'idx-blk':b.tipo==='enlazada'||b.tipo==='enlazada-fin'?'ptr':'ocupado';
@@ -408,23 +393,98 @@ function ejAlm(){
   document.getElementById('a-bidx').textContent=idxBlocks;
   document.getElementById('d-cap-info').textContent=`(${totB} bloques de ${bkKb}KB)`;
 
-  // Leyenda
   document.getElementById('leyenda-alm').innerHTML=Object.entries(archColorMap).map(([nom,col])=>
     `<span style="color:#aaa">■ <span style="color:${col}">${nom}</span></span>`).join(' ');
 
-  // Métodos resumen
   const metCount={};
-  archivos.forEach(a=>{metCount[a.met]=(metCount[a.met]||0)+1;});
+  archivos.forEach(a=>{metCount[a.met||(metodoSel||'—')]=(metCount[a.met||(metodoSel||'—')]||0)+1;});
   document.getElementById('a-metodos').innerHTML=Object.entries(metCount).map(([m,n])=>
     `<div style="margin-bottom:3px"><span style="color:#4fc3f7;text-transform:capitalize">${m}</span>: ${n} archivo(s)</div>`).join('');
 
-  // Tabla resultados
   const allRes=[...resul,...noAsig.map(a=>({...a,bloqAsig:[],estado:'Rechazado'}))];
   document.getElementById('tbl-alm-res').innerHTML=allRes.map(a=>`
     <tr><td class="pid">${a.nom}</td><td>${a.tamKB} KB</td><td>${a.bloqReq}</td>
-    <td style="color:#4fc3f7;text-transform:capitalize">${a.met}</td>
+    <td style="color:#4fc3f7;text-transform:capitalize">${a.met||'—'}</td>
     <td>${a.bloqAsig&&a.bloqAsig.length?a.bloqAsig.join(', '):'—'}</td>
     <td style="color:${a.estado==='Asignado'?'#4caf50':'#f44336'}">${a.estado}</td></tr>`).join('');
+}
+function asignarArchivo(disco, arch, metodoSel, bkKb){
+  const libres=disco.filter(b=>b.libre);
+  if(libres.length<arch.bloqReq){return {ok:false,motivo:'Espacio insuficiente'};}
+  let asignados=[];
+  let fragDelta=0;
+  if(metodoSel==='contigua'){
+    let start=-1, count=0;
+    for(let i=0;i<disco.length;i++){
+      if(disco[i].libre){count++;if(count===1)start=i;if(count===arch.bloqReq)break;}
+      else{count=0;start=-1;}
+    }
+    if(count<arch.bloqReq){return {ok:false,motivo:'No hay espacio contiguo'};}
+    for(let i=start;i<start+arch.bloqReq;i++){disco[i].libre=false;disco[i].archivo=arch.nom;disco[i].tipo='contigua';asignados.push(i);}
+    const tamUltimo=arch.tamKB-(arch.bloqReq-1)*bkKb;
+    fragDelta=Math.max(0,bkKb-tamUltimo);
+  } else if(metodoSel==='enlazada'){
+    let count=0;
+    for(let i=0;i<disco.length&&count<arch.bloqReq;i++){
+      if(disco[i].libre){disco[i].libre=false;disco[i].archivo=arch.nom;disco[i].tipo=count<arch.bloqReq-1?'enlazada':'enlazada-fin';asignados.push(i);count++;}
+    }
+    const tamUltimo=arch.tamKB-(arch.bloqReq-1)*bkKb;
+    fragDelta=Math.max(0,bkKb-tamUltimo);
+  } else {
+    const needed=arch.bloqReq+1;
+    if(libres.length<needed){return {ok:false,motivo:'Espacio insuficiente (índice)'};}
+    let count=0;
+    for(let i=0;i<disco.length&&count<=arch.bloqReq;i++){
+      if(disco[i].libre){
+        if(count===0){disco[i].libre=false;disco[i].archivo=arch.nom;disco[i].tipo='indice';asignados.push(i);}
+        else{disco[i].libre=false;disco[i].archivo=arch.nom;disco[i].tipo='indexada';asignados.push(i);}
+        count++;
+      }
+    }
+    const tamUltimo=arch.tamKB-(arch.bloqReq-1)*bkKb;
+    fragDelta=Math.max(0,bkKb-tamUltimo);
+    return {ok:true,asignados,fragDelta,idxBlock:true};
+  }
+  return {ok:true,asignados,fragDelta};
+}
+function ejAlm(){
+  if(!archivos.length){alert('Agrega archivos primero.');return;}
+  clearTimeout(almAnimId);
+  const metodoSel=getMetodoAlm();
+  const totB=totalBloques();
+  const bkKb=blkKB();
+  const disco=Array.from({length:totB},(_,i)=>({id:i,libre:true,archivo:null,tipo:null}));
+  const resul=[],noAsig=[];
+  let fragTotal=0, idxBlocks=0;
+  const archColorMap={};
+  let ci=0;
+  const pending=[];
+
+  archivos.forEach(arch=>{
+    arch.met=metodoSel;
+    archColorMap[arch.nom]=ACOLS[ci++%ACOLS.length];
+    pending.push({arch});
+  });
+
+  renderAlmState(disco, archColorMap, totB, bkKb, resul, noAsig, fragTotal, idxBlocks, archivos, metodoSel);
+
+  let step=0;
+  function tick(){
+    if(step>=pending.length){return;}
+    const item=pending[step++];
+    const arch=item.arch;
+    const result=asignarArchivo(disco, arch, metodoSel, bkKb);
+    if(result.ok){
+      resul.push({...arch,bloqAsig:result.asignados,estado:'Asignado'});
+      fragTotal+=result.fragDelta||0;
+      if(result.idxBlock) idxBlocks++;
+    } else {
+      noAsig.push({...arch,motivo:result.motivo||'Espacio insuficiente'});
+    }
+    renderAlmState(disco, archColorMap, totB, bkKb, resul, noAsig, fragTotal, idxBlocks, archivos, metodoSel);
+    almAnimId=setTimeout(tick,500);
+  }
+  tick();
 }
 
 function limpiarAlm(){

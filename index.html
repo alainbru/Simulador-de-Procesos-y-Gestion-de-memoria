@@ -51,29 +51,41 @@
   <div class="topbar">
     <h2 id="page-title">Planificación de Procesos</h2>
     <div class="tb-right">
-      <div class="csv-glob">
-        <label>CSV:</label>
-        <label id="csv-lbl" for="csv-inp">📂 Cargar</label>
-        <input type="file" id="csv-inp" accept=".csv" onchange="cargarCSV(event)">
-        <span class="csv-inf" id="csv-inf">Sin archivo</span>
-      </div>
-      <div id="btns-plan" style="display:flex;gap:6px;flex-wrap:wrap">
-        <button class="btn green"  onclick="ejSRT()">▶ SRT</button>
-        <button class="btn orange" onclick="ejRR()">▶ RR</button>
-        <button class="btn purple" onclick="ejFCFS()">▶ FCFS</button>
-        <button class="btn teal"   onclick="ejSPN()">▶ SPN</button>
-        <button class="btn"        onclick="reiniciar()">↺</button>
-        <button class="btn red"    onclick="limpiarPlan()">✕</button>
-      </div>
-      <div id="btns-mem" style="display:none;gap:6px;flex-wrap:wrap">
-        <button class="btn green"  onclick="ejMem('ff')">▶ First Fit</button>
-        <button class="btn orange" onclick="ejMem('bf')">▶ Best Fit</button>
-        <button class="btn purple" onclick="ejMem('wf')">▶ Worst Fit</button>
-        <button class="btn red"    onclick="limpiarMem()">✕</button>
-      </div>
-      <div id="btns-alm" style="display:none;gap:6px;flex-wrap:wrap">
-        <button class="btn indigo" onclick="ejAlm()">▶ Simular</button>
-        <button class="btn red"    onclick="limpiarAlm()">✕ Limpiar</button>
+      <div class="toolbar-controls">
+        <div class="csv-glob">
+          <label>CSV:</label>
+          <label id="csv-lbl" for="csv-inp">📂 Cargar</label>
+          <input type="file" id="csv-inp" accept=".csv" onchange="cargarCSV(event)">
+          <span class="csv-inf" id="csv-inf">Sin archivo</span>
+        </div>
+        <div id="alm-top-controls" class="alm-top-controls" style="display:none">
+          <label for="alm-metodo">Método:</label>
+          <select id="alm-metodo">
+            <option value="contigua">Contigua</option>
+            <option value="enlazada">Enlazada</option>
+            <option value="indexada">Indexada</option>
+          </select>
+        </div>
+        <div class="method-stack">
+          <div id="btns-plan" style="display:flex;gap:6px;flex-wrap:wrap">
+            <button class="btn green"  onclick="ejSRT()">▶ SRT</button>
+            <button class="btn orange" onclick="ejRR()">▶ RR</button>
+            <button class="btn purple" onclick="ejFCFS()">▶ FCFS</button>
+            <button class="btn teal"   onclick="ejSPN()">▶ SPN</button>
+            <button class="btn"        onclick="reiniciar()">↺</button>
+            <button class="btn red"    onclick="limpiarPlan()">✕</button>
+          </div>
+          <div id="btns-mem" style="display:none;gap:6px;flex-wrap:wrap">
+            <button class="btn green"  onclick="ejMem('ff')">▶ First Fit</button>
+            <button class="btn orange" onclick="ejMem('bf')">▶ Best Fit</button>
+            <button class="btn purple" onclick="ejMem('wf')">▶ Worst Fit</button>
+            <button class="btn red"    onclick="limpiarMem()">✕</button>
+          </div>
+          <div id="btns-alm" style="display:none;gap:6px;flex-wrap:wrap">
+            <button class="btn indigo" onclick="ejAlm()">▶ Simular</button>
+            <button class="btn red"    onclick="limpiarAlm()">✕ Limpiar</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -225,13 +237,6 @@
               <div class="f"><label>Tamaño del Archivo</label><input id="a-tam" type="number" min="1" placeholder="10"></div>
               <div class="f"><label>Unidad</label>
                 <select id="a-tam-u"><option value="KB">KB</option><option value="MB">MB</option></select>
-              </div>
-              <div class="f"><label>Método</label>
-                <select id="a-met">
-                  <option value="contigua">Contigua</option>
-                  <option value="enlazada">Enlazada</option>
-                  <option value="indexada">Indexada</option>
-                </select>
               </div>
               <div class="f" style="display:flex;align-items:flex-end">
                 <button class="btn accent" style="width:100%" onclick="addArchivo()">+ Agregar</button>

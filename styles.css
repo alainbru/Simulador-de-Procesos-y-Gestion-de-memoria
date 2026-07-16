@@ -36,7 +36,13 @@ body{font-family:'Segoe UI',sans-serif;background:#1a1a1a;color:#c8c8c8;display:
 .main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
 .topbar{padding:8px 16px;border-bottom:1px solid #2d2d2d;display:flex;align-items:center;justify-content:space-between;background:#1f1f1f;flex-shrink:0;gap:8px;flex-wrap:wrap}
 .topbar h2{font-size:14px;font-weight:400;color:#f0f0f0;white-space:nowrap}
-.tb-right{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.tb-right{display:flex;gap:6px;flex-wrap:wrap;align-items:center;justify-content:flex-end}
+.toolbar-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.alm-top-controls{display:flex;align-items:center;gap:6px;padding:4px 8px;background:#1e2a20;border:1px solid #2d4a2d;border-radius:4px}
+.alm-top-controls label{font-size:11px;color:#7a9a7a;white-space:nowrap}
+.alm-top-controls select{padding:4px 6px;background:#2a2a2a;border:1px solid #3a3a3a;border-radius:3px;color:#e0e0e0;font-size:12px;outline:none}
+.method-stack{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+#btns-plan,#btns-mem,#btns-alm{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 
 /* PAGES */
 .pages-wrap{flex:1;position:relative;overflow:hidden}
@@ -123,8 +129,8 @@ tbody tr:hover{background:#222}
 .pdot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
 
 /* DISCO GRID */
-.disco-grid{display:grid;gap:2px;margin-bottom:6px}
-.blk{border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#fff;min-height:28px;border:1px solid rgba(0,0,0,.3);transition:background .3s;cursor:default}
+.disco-grid{display:grid;gap:2px;margin-bottom:6px;max-height:260px;overflow:auto;padding:2px}
+.blk{border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#fff;min-height:28px;border:1px solid rgba(0,0,0,.3);transition:background .3s;cursor:default;min-width:24px}
 .blk.libre{background:#1e2a1e;color:#3a5a3a;border-color:#2d3d2d}
 .blk.ocupado{border-color:rgba(255,255,255,.1)}
 .blk.idx-blk{background:#1a1a3a;color:#5a5aaa;border-color:#2d2d5a;border-style:dashed}
