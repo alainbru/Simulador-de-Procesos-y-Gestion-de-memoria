@@ -1,47 +1,53 @@
+
 // ─── SIDEBAR ───
-function toggleSidebar(){document.getElementById('sidebar').classList.toggle('collapsed')}
-function clickGroup(id){
+function toggleSB(){document.getElementById('sidebar').classList.toggle('collapsed')}
+function clickG(id){
   const sb=document.getElementById('sidebar');
-  if(sb.classList.contains('collapsed')){sb.classList.remove('collapsed');setTimeout(()=>expandGroup(id),50);showPage(id==='plan'?'procesos':'memoria');}
-  else expandGroup(id);
+  if(sb.classList.contains('collapsed')){
+    sb.classList.remove('collapsed');
+    setTimeout(()=>expandG(id),50);
+    showPage(id);
+  } else expandG(id);
 }
-function expandGroup(id){
+function expandG(id){
   document.getElementById('grp-'+id).classList.toggle('open');
   document.getElementById('ch-'+id).classList.toggle('open');
 }
 function showPage(name){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('active'));
-  document.querySelectorAll('.nav-group-header').forEach(h=>h.classList.remove('active-group'));
+  document.querySelectorAll('.ng-hdr').forEach(h=>h.classList.remove('active-g'));
   document.getElementById('page-'+name).classList.add('active');
-  document.querySelectorAll('.nav-item').forEach(i=>{if(i.getAttribute('onclick')&&i.getAttribute('onclick').includes(name))i.classList.add('active');});
-  document.getElementById('page-title').textContent={procesos:'Planificación de Procesos',memoria:'Gestión de Memoria'}[name];
-  document.getElementById('btns-plan').style.display=name==='procesos'?'flex':'none';
-  document.getElementById('btns-mem').style.display=name==='memoria'?'flex':'none';
-  if(name==='procesos') document.getElementById('grp-plan').classList.add('active-group');
-  if(name==='memoria')  document.getElementById('grp-mem').classList.add('active-group');
+  document.querySelectorAll('.nav-item').forEach(i=>{
+    if(i.getAttribute('onclick')&&i.getAttribute('onclick').includes("'"+name+"'"))i.classList.add('active');
+  });
+  const titles={plan:'Planificación de Procesos',mem:'Gestión de Memoria',alm:'Gestión de Almacenamiento'};
+  document.getElementById('page-title').textContent=titles[name]||name;
+  document.getElementById('btns-plan').style.display=name==='plan'?'flex':'none';
+  document.getElementById('btns-mem').style.display=name==='mem'?'flex':'none';
+  document.getElementById('btns-alm').style.display=name==='alm'?'flex':'none';
+  if(document.getElementById('grp-'+name)) document.getElementById('grp-'+name).classList.add('active-g');
 }
+function togColl(hdr){hdr.classList.toggle('open');hdr.nextElementSibling.classList.toggle('open');}
 
 // ─── DATA ───
 let procesos=[], animId=null, colorMap={};
-const PALETA=['rgba(21,101,192,0.75)','rgba(46,125,50,0.75)','rgba(106,27,154,0.75)',
-              'rgba(198,40,40,0.75)','rgba(230,81,0,0.75)','rgba(0,105,92,0.75)',
-              'rgba(69,39,160,0.75)','rgba(173,20,87,0.75)','rgba(2,119,189,0.75)','rgba(85,139,47,0.75)'];
-const MEM_COLORS=['#1565c0','#2e7d32','#6a1b9a','#c62828','#e65100','#00695c','#4527a0','#ad1457','#0277bd','#558b2f','#4e342e','#37474f','#f57f17','#00838f','#283593'];
-const PROC_COLORS={}; let colorIdx=0;
+let archivos=[];
+const PAL=['rgba(21,101,192,.6)','rgba(46,125,50,.6)','rgba(106,27,154,.6)','rgba(198,40,40,.6)',
+           'rgba(230,81,0,.6)','rgba(0,105,92,.6)','rgba(69,39,160,.6)','rgba(173,20,87,.6)',
+           'rgba(2,119,189,.6)','rgba(85,139,47,.6)'];
+const MCOLS=['#1565c0','#2e7d32','#6a1b9a','#c62828','#e65100','#00695c','#4527a0','#ad1457','#0277bd','#558b2f'];
+const ACOLS=['#1565c0','#2e7d32','#6a1b9a','#c62828','#e65100','#00695c','#4527a0','#ad1457','#0277bd','#558b2f',
+             '#0097a7','#f57f17','#4e342e','#37474f','#6a4f4b'];
 
-function getGanttColor(pid){
-  if(pid==='Idle') return 'rgba(255,255,255,0.05)';
-  if(!colorMap[pid]) colorMap[pid]=PALETA[Object.keys(colorMap).length%PALETA.length];
+function getColor(pid){
+  if(pid==='Idle')return 'rgba(255,255,255,.05)';
+  if(!colorMap[pid]) colorMap[pid]=PAL[Object.keys(colorMap).length%PAL.length];
   return colorMap[pid];
 }
-function getProcColor(pid){
-  if(!PROC_COLORS[pid]) PROC_COLORS[pid]=MEM_COLORS[colorIdx++%MEM_COLORS.length];
-  return PROC_COLORS[pid];
-}
 
-// ─── CSV ───
-function cargarCSVGlobal(e){
+// ─── CSV GLOBAL ───
+function cargarCSV(e){
   const f=e.target.files[0]; if(!f)return;
   const r=new FileReader();
   r.onload=ev=>{
@@ -59,228 +65,157 @@ function cargarCSVGlobal(e){
       if(!id||arr===undefined||cpu===undefined)continue;
       procesos.push({id:id.trim(),llegada:parseInt(arr)||0,rafaga:parseInt(cpu)||1,restante:parseInt(cpu)||1,tamano:parseInt(tam)||0});
     }
-    renderTabla();
+    renderTblProc();
     document.getElementById('d-procs').textContent=procesos.length;
-    document.getElementById('csv-info').textContent=procesos.length+' proc.';
+    document.getElementById('csv-inf').textContent=procesos.length+' proc.';
   };
   r.readAsText(f); e.target.value='';
 }
 
-// ─── AGREGAR ───
-function agregarProceso(){
-  const id=document.getElementById('inp-id').value.trim();
-  const arr=parseInt(document.getElementById('inp-arr').value);
-  const cpu=parseInt(document.getElementById('inp-cpu').value);
-  const tam=parseInt(document.getElementById('inp-tam').value)||0;
+// ─── PLANIFICACIÓN ───
+function addProc(){
+  const id=document.getElementById('p-id').value.trim();
+  const arr=parseInt(document.getElementById('p-arr').value);
+  const cpu=parseInt(document.getElementById('p-cpu').value);
+  const tam=parseInt(document.getElementById('p-tam').value)||0;
   if(!id||isNaN(arr)||isNaN(cpu)||cpu<1){alert('Completa ID, Llegada y T.Servicio.');return;}
   procesos.push({id,llegada:arr,rafaga:cpu,restante:cpu,tamano:tam});
-  renderTabla();
+  renderTblProc();
   document.getElementById('d-procs').textContent=procesos.length;
-  ['inp-id','inp-arr','inp-cpu','inp-tam'].forEach(x=>document.getElementById(x).value='');
+  ['p-id','p-arr','p-cpu','p-tam'].forEach(x=>document.getElementById(x).value='');
 }
 
-// ─── TABLA ───
-function renderTabla(rows){
+function renderTblProc(rows){
   const data=rows||procesos.map(p=>({...p,inicio:'',fin:'',espera:'',retorno:''}));
   const tb=document.getElementById('tbl-proc');
-  if(!data.length){tb.innerHTML='<tr><td colspan="8" style="text-align:center;color:#5a5a5a;padding:16px">Sin procesos.</td></tr>';return;}
+  if(!data.length){tb.innerHTML='<tr><td colspan="8" style="text-align:center;color:#5a5a5a;padding:14px">Sin procesos.</td></tr>';return;}
   tb.innerHTML=data.sort((a,b)=>String(a.id)>String(b.id)?1:-1).map(r=>`
-    <tr>
-      <td class="pid">${r.id}</td>
-      <td>${r.llegada}</td><td>${r.rafaga}</td><td>${r.tamano||'—'}</td>
-      <td>${r.inicio}</td><td>${r.fin}</td>
-      <td style="color:${r.espera!==''?'#ffb74d':'inherit'}">${r.espera}</td>
-      <td style="color:${r.retorno!==''?'#81c784':'inherit'}">${r.retorno}</td>
-    </tr>`).join('');
+    <tr><td class="pid">${r.id}</td><td>${r.llegada}</td><td>${r.rafaga}</td><td>${r.tamano||'—'}</td>
+    <td>${r.inicio}</td><td>${r.fin}</td>
+    <td style="color:${r.espera!==''?'#ffb74d':'inherit'}">${r.espera}</td>
+    <td style="color:${r.retorno!==''?'#81c784':'inherit'}">${r.retorno}</td></tr>`).join('');
 }
 
-function setResultados(rows,info){
+function setRes(rows,info){
   const res=rows.map(p=>{
-    const fin=info[p.id].fin??'', inicio=info[p.id].inicio??'';
-    const ret=fin!==''?fin-p.llegada:'';
-    const esp=ret!==''?ret-p.rafaga:'';
-    return{...p,inicio,fin,espera:esp,retorno:ret};
+    const fin=info[p.id].fin??'',ini=info[p.id].inicio??'';
+    const ret=fin!==''?fin-p.llegada:'', esp=ret!==''?ret-p.rafaga:'';
+    return {...p,inicio:ini,fin,espera:esp,retorno:ret};
   });
-  renderTabla(res);
+  renderTblProc(res);
   const es=res.map(r=>r.espera).filter(v=>v!=='');
   const re=res.map(r=>r.retorno).filter(v=>v!=='');
   if(es.length){
-    const totalTime=Math.max(...rows.map(r=>info[r.id].fin??0));
-    const avgEspera=es.reduce((a,b)=>a+b,0)/es.length;
-    const avgRetorno=re.reduce((a,b)=>a+b,0)/re.length;
-    const pctEspera=(avgEspera/totalTime*100).toFixed(2);
-    const pctRetorno=(avgRetorno/totalTime*100).toFixed(2);
-    document.getElementById('avg-e').textContent=pctEspera+'%';
-    document.getElementById('avg-r').textContent=pctRetorno+'%';
+    document.getElementById('avg-e').textContent=(es.reduce((a,b)=>a+b,0)/es.length).toFixed(2);
+    document.getElementById('avg-r').textContent=(re.reduce((a,b)=>a+b,0)/re.length).toFixed(2);
   }
 }
 function setAlgo(n,m,q,exp,t){
-  document.getElementById('algo-name').textContent=n;
+  document.getElementById('p-algo').textContent=n;
   document.getElementById('d-modo').textContent=m;
   document.getElementById('d-q').textContent=q;
   document.getElementById('d-exp').textContent=exp;
-  document.getElementById('d-total').textContent=t+' ut';
+  document.getElementById('d-tot').textContent=t+' ut';
 }
 
-// ─── ALGORITMOS ───
-function ejecutarFCFS(){
+function ejFCFS(){
   if(!procesos.length){alert('Sin procesos.');return;}
   const cp=procesos.map(p=>({...p})).sort((a,b)=>a.llegada-b.llegada);
   const info={}; cp.forEach(p=>info[p.id]={inicio:null,fin:null});
   let t=0; const g=[];
-  for(const p of cp){
-    while(t<p.llegada){g.push('Idle');t++;}
-    info[p.id].inicio=t;
-    for(let i=0;i<p.rafaga;i++){g.push(p.id);t++;}
-    info[p.id].fin=t;
-  }
-  setAlgo('FCFS','No expulsivo','—',0,t); animarGantt(g); setResultados(cp,info);
+  for(const p of cp){while(t<p.llegada){g.push('Idle');t++;}info[p.id].inicio=t;for(let i=0;i<p.rafaga;i++){g.push(p.id);t++;}info[p.id].fin=t;}
+  setAlgo('FCFS','No expulsivo','—',0,t); animGantt(g); setRes(cp,info);
 }
-function ejecutarSPN(){
+function ejSPN(){
   if(!procesos.length){alert('Sin procesos.');return;}
   const cp=procesos.map(p=>({...p,restante:p.rafaga}));
   const info={}; cp.forEach(p=>info[p.id]={inicio:null,fin:null});
   let t=0,done=0; const g=[];
   while(done<cp.length){
-    const disp=cp.filter(p=>p.llegada<=t&&p.restante>0);
-    if(!disp.length){g.push('Idle');t++;continue;}
-    const p=disp.reduce((a,b)=>a.rafaga<b.rafaga?a:b);
-    info[p.id].inicio=t;
-    for(let i=0;i<p.rafaga;i++){g.push(p.id);t++;}
-    info[p.id].fin=t; p.restante=0; done++;
+    const d=cp.filter(p=>p.llegada<=t&&p.restante>0);
+    if(!d.length){g.push('Idle');t++;continue;}
+    const p=d.reduce((a,b)=>a.rafaga<b.rafaga?a:b);
+    info[p.id].inicio=t; for(let i=0;i<p.rafaga;i++){g.push(p.id);t++;} info[p.id].fin=t; p.restante=0; done++;
   }
-  setAlgo('SPN','No expulsivo','—',0,t); animarGantt(g); setResultados(cp,info);
+  setAlgo('SPN','No expulsivo','—',0,t); animGantt(g); setRes(cp,info);
 }
-function ejecutarSRT(){
+function ejSRT(){
   if(!procesos.length){alert('Sin procesos.');return;}
   const cp=procesos.map(p=>({...p,restante:p.rafaga}));
   const info={}; cp.forEach(p=>info[p.id]={inicio:null,fin:null});
   let t=0,done=0,prev=null,exp=0; const g=[];
   while(done<cp.length){
-    const disp=cp.filter(p=>p.llegada<=t&&p.restante>0);
-    if(disp.length){
-      const p=disp.reduce((a,b)=>a.restante<b.restante?a:b);
-      if(info[p.id].inicio===null) info[p.id].inicio=t;
-      if(prev&&prev!==p.id&&prev!=='Idle') exp++;
-      p.restante--; g.push(p.id);
+    const d=cp.filter(p=>p.llegada<=t&&p.restante>0);
+    if(d.length){
+      const p=d.reduce((a,b)=>a.restante<b.restante?a:b);
+      if(info[p.id].inicio===null)info[p.id].inicio=t;
+      if(prev&&prev!==p.id&&prev!=='Idle')exp++;
+      p.restante--;g.push(p.id);
       if(p.restante===0){info[p.id].fin=t+1;done++;}
       prev=p.id;
-    } else{g.push('Idle');prev='Idle';}
+    } else {g.push('Idle');prev='Idle';}
     t++;
   }
-  setAlgo('SRT','Expulsivo','—',exp,t); animarGantt(g); setResultados(cp,info);
+  setAlgo('SRT','Expulsivo','—',exp,t); animGantt(g); setRes(cp,info);
 }
-function ejecutarRR(){
+function ejRR(){
   if(!procesos.length){alert('Sin procesos.');return;}
-  const q=parseInt(document.getElementById('inp-q').value)||2;
+  const q=parseInt(document.getElementById('p-q').value)||2;
   const cp=procesos.map(p=>({...p,restante:p.rafaga}));
   const info={}; cp.forEach(p=>info[p.id]={inicio:null,fin:null});
-  let t=0,cola=[],g=[],exp=0;
-  const encolados=new Set();
-  function encolar(ti){cp.filter(p=>p.llegada===ti&&p.restante>0&&!encolados.has(p.id)).sort((a,b)=>String(a.id)>String(b.id)?1:-1).forEach(p=>{cola.push(p);encolados.add(p.id);});}
+  let t=0,cola=[],g=[],exp=0; const enc=new Set();
+  function encolar(ti){cp.filter(p=>p.llegada===ti&&p.restante>0&&!enc.has(p.id)).sort((a,b)=>String(a.id)>String(b.id)?1:-1).forEach(p=>{cola.push(p);enc.add(p.id);});}
   encolar(0);
   while(cp.some(p=>p.restante>0)){
     if(!cola.length){g.push('Idle');t++;encolar(t);continue;}
-    const p=cola.shift();
-    if(info[p.id].inicio===null) info[p.id].inicio=t;
-    let ej=0;
-    while(ej<q&&p.restante>0){g.push(p.id);p.restante--;ej++;t++;encolar(t);}
-    if(p.restante>0){cola.push(p);exp++;}
-    else info[p.id].fin=t;
+    const p=cola.shift(); if(info[p.id].inicio===null)info[p.id].inicio=t;
+    let ej=0; while(ej<q&&p.restante>0){g.push(p.id);p.restante--;ej++;t++;encolar(t);}
+    if(p.restante>0){cola.push(p);exp++;} else info[p.id].fin=t;
   }
-  setAlgo(`RR (q=${q})`,'Expulsivo',q,exp,t); animarGantt(g); setResultados(cp,info);
+  setAlgo(`RR (q=${q})`,'Expulsivo',q,exp,t); animGantt(g); setRes(cp,info);
 }
 
-// ─── GANTT ───
-function animarGantt(g){
-  clearTimeout(animId);
-  const cv=document.getElementById('gantt-canvas');
-  cv.innerHTML='';
-  document.getElementById('gantt-info').textContent=g.length+' ut';
-  const segs=[];
-  for(const pid of g){
-    if(segs.length&&segs[segs.length-1].pid===pid) segs[segs.length-1].len++;
-    else segs.push({pid,len:1});
-  }
-  
-  // Calcular tamaños dinámicos basados en el número total de ticks
-  const totalTicks=g.length;
-  let minW, maxW;
-  if(totalTicks<=30) { minW=18; maxW=72; }
-  else if(totalTicks<=50) { minW=14; maxW=48; }
-  else if(totalTicks<=80) { minW=10; maxW=32; }
-  else if(totalTicks<=120) { minW=8; maxW=24; }
-  else { minW=6; maxW=16; }
-  
-  let i=0,t=0;
+// GANTT
+function bwCalc(total){const cw=document.getElementById('g-canvas').parentElement.clientWidth-20;return Math.max(4,Math.min(60,Math.floor(cw/Math.max(total,1))));}
+function animGantt(g){
+  clearTimeout(animId); const cv=document.getElementById('g-canvas');
+  cv.innerHTML=''; document.getElementById('g-info').textContent=g.length+' ut';
+  let i=0;
   function step(){
-    if(i>segs.length) return;
-    const shown=segs.slice(0,i);
-    cv.innerHTML=''; t=0;
-    shown.forEach((seg,si)=>{
-      const blk=document.createElement('div');
-      blk.className='g-block';
-      blk.style.cssText=`flex:${seg.len};min-width:${Math.max(minW,seg.len*Math.floor(maxW/18))}px;max-width:${Math.max(minW*2,seg.len*maxW)}px`;
-      const rect=document.createElement('div');
-      rect.className='g-rect'+(si===shown.length-1?' animate-in':'');
-      rect.style.background=getGanttColor(seg.pid);
-      const fs=seg.len===1?'9px':seg.len<3?'10px':'12px';
-      rect.innerHTML=`<span style="font-size:${fs};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:90%">${seg.pid==='Idle'?'—':seg.pid}</span>`;
-      blk.appendChild(rect);
-      const tick=document.createElement('div');
-      tick.className='g-tick'; tick.textContent=t;
-      blk.appendChild(tick);
-      cv.appendChild(blk);
-      t+=seg.len;
-    });
-    if(i===segs.length&&shown.length){
-      const fin=document.createElement('div');
-      fin.style.cssText='display:flex;flex-direction:column;align-items:center;flex:0;min-width:16px';
-      const endTick=document.createElement('div');
-      endTick.className='g-tick'; endTick.textContent=t;
-      fin.appendChild(endTick); cv.appendChild(fin);
-    }
-    i++;
-    const vel=parseInt(document.getElementById('vel').value);
-    if(i<=segs.length) animId=setTimeout(step,[250,140,70,30,8][vel-1]);
+    if(i>g.length)return;
+    const sl=g.slice(0,i), w=bwCalc(g.length), wp=w+'px';
+    const ip=w<=6, fs=w<12?'7px':w<20?'8px':'10px', ts=w<14?'0px':'8px', sl2=w>10;
+    cv.innerHTML=sl.map((pid,idx)=>`
+      <div class="gb" style="width:${wp};min-width:${wp}">
+        <div class="gr-rect" style="background:${getColor(pid)};font-size:${fs};height:${ip?'10px':'36px'};border-radius:${ip?'50%':'2px'};border-color:${ip?'transparent':'rgba(255,255,255,.08)'}">
+          ${sl2&&!ip?(pid==='Idle'?'—':pid):''}
+        </div>
+        <div class="gt" style="font-size:${ts};opacity:${ts==='0px'?0:1}">${idx}</div>
+      </div>`).join('')+(i===g.length&&!ip?`<div class="gb" style="width:${wp};min-width:${wp}"><div class="gt" style="margin-top:${ip?12:39}px;font-size:${ts}">${i}</div></div>`:'');
+    i++; animId=setTimeout(step,[200,120,60,25,5][parseInt(document.getElementById('vel').value)-1]);
   }
   step();
 }
 
-function toggleTabla(){
-  const body=document.getElementById('tbl-proc-body');
-  const arrow=document.getElementById('tbl-proc-arrow');
-  const open=body.style.maxHeight!=='0px';
-  body.style.maxHeight=open?'0px':'500px';
-  arrow.style.transform=open?'rotate(0deg)':'rotate(90deg)';
-}
-function toggleSection(id){
-  const body=document.getElementById(`${id}-body`);
-  if(!body) return;
-  const isClosed = body.classList.toggle('closed');
-  const arrow=document.getElementById(`${id}-arrow`);
-  if(arrow) arrow.style.transform = isClosed ? 'rotate(0deg)' : 'rotate(90deg)';
-}
 function reiniciar(){
   clearTimeout(animId);
-  document.getElementById('gantt-canvas').innerHTML='<span style="color:#4a4a4a;font-size:11px;align-self:center">Esperando ejecución...</span>';
-  document.getElementById('gantt-info').textContent='—';
-  ['avg-e','avg-r','algo-name','d-total','d-exp','d-modo'].forEach(id=>document.getElementById(id).textContent='—');
-  renderTabla();
+  document.getElementById('g-canvas').innerHTML='<span style="color:#4a4a4a;font-size:11px">Esperando...</span>';
+  document.getElementById('g-info').textContent='—';
+  ['avg-e','avg-r','p-algo','d-tot','d-exp','d-modo'].forEach(id=>document.getElementById(id).textContent='—');
+  renderTblProc();
 }
-function limpiarTodo(){
+function limpiarPlan(){
   clearTimeout(animId); procesos=[]; colorMap={};
-  document.getElementById('gantt-canvas').innerHTML='<span style="color:#4a4a4a;font-size:11px;align-self:center">Esperando ejecución...</span>';
-  document.getElementById('gantt-info').textContent='—';
-  document.getElementById('csv-info').textContent='Sin archivo';
-  ['avg-e','avg-r','algo-name','d-total','d-q','d-exp','d-modo'].forEach(id=>document.getElementById(id).textContent='—');
-  document.getElementById('d-procs').textContent='0';
-  renderTabla();
+  document.getElementById('g-canvas').innerHTML='<span style="color:#4a4a4a;font-size:11px">Esperando...</span>';
+  document.getElementById('g-info').textContent='—';
+  document.getElementById('csv-inf').textContent='Sin archivo';
+  ['avg-e','avg-r','p-algo','d-tot','d-q','d-exp','d-modo'].forEach(id=>document.getElementById(id).textContent='—');
+  document.getElementById('d-procs').textContent='0'; renderTblProc();
 }
 
 // ─── MEMORIA ───
 let particiones=[];
-function toggleFija(){
+function togFija(){
   const on=document.getElementById('chk-fija').checked;
   document.getElementById('panel-fija').style.display=on?'block':'none';
   document.getElementById('m-modo').textContent=on?'Particiones Fijas':'Dinámica';
@@ -289,123 +224,217 @@ function toggleFija(){
 function addPart(){
   const idx=particiones.length; particiones.push(256);
   const d=document.createElement('div'); d.className='part-row';
-  d.innerHTML=`<div class="part-dot" style="background:${MEM_COLORS[idx%MEM_COLORS.length]}"></div>
-    <span style="font-size:11px;color:#7a7a7a;width:70px">Part. ${idx+1}</span>
+  d.innerHTML=`<div class="pdot" style="background:${MCOLS[idx%MCOLS.length]}"></div>
+    <span style="font-size:11px;color:#7a7a7a;width:65px">Part. ${idx+1}</span>
     <input type="number" min="1" value="256" onchange="particiones[${idx}]=parseInt(this.value)||256">`;
   document.getElementById('part-list').appendChild(d);
 }
 function delPart(){
-  if(!particiones.length)return;
-  particiones.pop();
-  const l=document.getElementById('part-list');
-  if(l.lastChild) l.removeChild(l.lastChild);
+  if(!particiones.length)return; particiones.pop();
+  const l=document.getElementById('part-list'); if(l.lastChild)l.removeChild(l.lastChild);
 }
-
-function elegir(lib,algo){
-  if(!lib.length) return null;
-  if(algo==='ff') return lib[0];
-  if(algo==='bf') return lib.reduce((a,b)=>a.tam<b.tam?a:b);
-  return lib.reduce((a,b)=>a.tam>b.tam?a:b);
-}
-
-function ejecutarMem(algo){
-  if(!procesos.length){alert('Carga procesos primero.');return;}
-  const total=parseInt(document.getElementById('mem-total').value)||1024;
+function ejMem(algo){
+  if(!procesos.length){alert('Sin procesos.');return;}
+  const total=parseInt(document.getElementById('m-total').value)||1024;
   const fija=document.getElementById('chk-fija').checked;
   const tamPartes=Array.from(document.querySelectorAll('#part-list input')).map(i=>parseInt(i.value)||256);
-  let asig=[], noAsig=[];
-
+  let asig=[],noAsig=[];
   if(fija){
     const sum=tamPartes.reduce((a,b)=>a+b,0);
     if(sum>total){alert(`Particiones (${sum}KB) > Memoria (${total}KB)`);return;}
     const bloques=tamPartes.map((t,i)=>({idx:i,tam:t,pid:null,usado:0}));
-    for(const proc of procesos){
-      if(!proc.tamano){noAsig.push({...proc,motivo:'Sin tamaño'});continue;}
-      const lib=bloques.filter(b=>!b.pid&&b.tam>=proc.tamano);
-      const el=elegir(lib,algo);
-      if(el){
-        el.pid=proc.id; el.usado=proc.tamano;
-        const base=tamPartes.slice(0,el.idx).reduce((a,b)=>a+b,0);
-        asig.push({pid:proc.id,tam:proc.tamano,part:el.idx+1,base,limite:base+el.tam-1,fragInterna:el.tam-proc.tamano});
-      } else noAsig.push({...proc,motivo:'Sin partición disponible'});
+    for(const p of procesos){
+      if(!p.tamano){noAsig.push({...p,motivo:'Sin tamaño'});continue;}
+      const lib=bloques.filter(b=>!b.pid&&b.tam>=p.tamano);
+      let el=null;
+      if(algo==='ff')el=lib[0];else if(algo==='bf')el=lib.sort((a,b)=>a.tam-b.tam)[0];else el=lib.sort((a,b)=>b.tam-a.tam)[0];
+      if(el){el.pid=p.id;el.usado=p.tamano;const base=tamPartes.slice(0,el.idx).reduce((a,b)=>a+b,0);asig.push({pid:p.id,tam:p.tamano,part:el.idx+1,base,limite:base+el.tam-1});}
+      else noAsig.push({...p,motivo:'Sin partición'});
     }
     renderMapaFijo(bloques,tamPartes,total);
-    const fragInterna=asig.reduce((a,r)=>a+r.fragInterna,0);
-    const fragExterna=bloques.filter(b=>!b.pid).reduce((a,b)=>a+b.tam,0);
-    document.getElementById('m-frag').textContent=fragInterna+' KB';
-    document.getElementById('m-frag-ext').textContent=fragExterna+' KB';
-    document.getElementById('m-frag-status').textContent=`Int: ${fragInterna>0?'Sí':'No'} | Ext: ${fragExterna>0?'Sí':'No'}`;
+    document.getElementById('m-frag').textContent=asig.reduce((a,b)=>{const pt=tamPartes[b.part-1]||b.tam;return a+(pt-b.tam);},0)+' KB';
   } else {
-    const mem=[{base:0,tam:total,pid:null}];
-    for(const proc of procesos){
-      if(!proc.tamano){noAsig.push({...proc,motivo:'Sin tamaño'});continue;}
-      const lib=mem.filter(b=>!b.pid&&b.tam>=proc.tamano).sort((a,b)=>a.base-b.base);
-      const el=elegir(lib,algo);
-      if(el){
-        const idx=mem.indexOf(el), resto=el.tam-proc.tamano, base=el.base;
-        mem.splice(idx,1,{base,tam:proc.tamano,pid:proc.id});
-        if(resto>0) mem.splice(idx+1,0,{base:base+proc.tamano,tam:resto,pid:null});
-        asig.push({pid:proc.id,tam:proc.tamano,part:'Dyn',base,limite:base+proc.tamano-1});
-      } else noAsig.push({...proc,motivo:'Sin espacio suficiente'});
+    let mem=[{base:0,tam:total,pid:null}];
+    for(const p of procesos){
+      if(!p.tamano){noAsig.push({...p,motivo:'Sin tamaño'});continue;}
+      const lib=mem.filter(b=>!b.pid&&b.tam>=p.tamano);
+      let el=null;
+      if(algo==='ff')el=lib[0];else if(algo==='bf')el=lib.sort((a,b)=>a.tam-b.tam)[0];else el=lib.sort((a,b)=>b.tam-a.tam)[0];
+      if(el){const resto=el.tam-p.tamano,base=el.base;el.pid=p.id;el.tam=p.tamano;if(resto>0)mem.splice(mem.indexOf(el)+1,0,{base:base+p.tamano,tam:resto,pid:null});asig.push({pid:p.id,tam:p.tamano,part:'Dyn',base,limite:base+p.tamano-1});}
+      else noAsig.push({...p,motivo:'Sin espacio'});
     }
-    renderMapaDin(mem,total);
-    const fragExterna=mem.filter(b=>!b.pid).reduce((a,b)=>a+b.tam,0);
-    document.getElementById('m-frag').textContent='—';
-    document.getElementById('m-frag-ext').textContent=fragExterna+' KB';
-    document.getElementById('m-frag-status').textContent=`Int: No | Ext: ${fragExterna>0?'Sí':'No'}`;
+    renderMapaDin(mem,total); document.getElementById('m-frag').textContent='—';
   }
-
   const usada=asig.reduce((a,b)=>a+b.tam,0);
-  const pctUsada=(usada/total*100).toFixed(2);
-  const pctLibre=((total-usada)/total*100).toFixed(2);
-  document.getElementById('m-usada').textContent=pctUsada+'%';
-  document.getElementById('m-libre').textContent=pctLibre+'%';
+  document.getElementById('m-usada').textContent=usada;
+  document.getElementById('m-libre').textContent=total-usada;
   document.getElementById('m-algo').textContent={ff:'First Fit',bf:'Best Fit',wf:'Worst Fit'}[algo];
   document.getElementById('m-asig').textContent=asig.length;
   document.getElementById('m-rech').textContent=noAsig.length;
-  document.getElementById('mem-bar').textContent=`Usado: ${usada} KB (${pctUsada}%) | Libre: ${total-usada} KB (${pctLibre}%) | Total: ${total} KB`;
-
-  document.getElementById('tbl-mem').innerHTML=asig.length
-    ?asig.map(a=>`<tr><td class="pid">${a.pid}</td><td>${a.tam} KB</td><td>${a.part}</td><td>${a.base}</td><td>${a.limite}</td><td style="color:#4caf50">Asignado</td></tr>`).join('')
-    :'<tr><td colspan="6" style="text-align:center;color:#5a5a5a;padding:16px">Sin asignaciones.</td></tr>';
-
-  document.getElementById('tbl-noasig').innerHTML=noAsig.length
-    ?noAsig.map(p=>`<tr><td class="pid">${p.id}</td><td>${p.tamano||'?'} KB</td><td style="color:#f44336">${p.motivo}</td></tr>`).join('')
-    :'<tr><td colspan="3" style="text-align:center;color:#5a5a5a;padding:16px">Sin rechazados.</td></tr>';
-}
-
-function animarBloquesMem(bloques){
-  const el=document.getElementById('mem-visual');
-  el.innerHTML='';
-  bloques.forEach((b,i)=>{
-    const div=document.createElement('div');
-    div.className='mv-block animate-in';
-    div.style.cssText=`flex:${b.flex};background:${b.bg};color:${b.color||'#fff'};animation-delay:${i*60}ms`;
-    div.title=b.title;
-    const fs=b.flex<0.08?'6px':b.flex<0.15?'7px':'8px';
-    div.innerHTML=(b.label?`<span style="font-size:${fs};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:95%;text-align:center">${b.label}</span>`:'')
-      +(b.sub?`<span style="font-size:${Math.max(5,parseInt(fs)-1)}px;opacity:.65;white-space:nowrap">${b.sub}</span>`:'');
-    el.appendChild(div);
-  });
+  document.getElementById('mem-bar').textContent=`Usado: ${usada} KB | Libre: ${total-usada} KB | Total: ${total} KB`;
+  document.getElementById('tbl-mem').innerHTML=asig.length?asig.map(a=>`<tr><td class="pid">${a.pid}</td><td>${a.tam} KB</td><td>${a.part}</td><td>${a.base}</td><td>${a.limite}</td><td style="color:#4caf50">Asignado</td></tr>`).join(''):'<tr><td colspan="6" style="text-align:center;color:#5a5a5a;padding:14px">Sin asignaciones.</td></tr>';
+  document.getElementById('tbl-noasig').innerHTML=noAsig.length?noAsig.map(p=>`<tr><td class="pid">${p.id}</td><td>${p.tamano||'?'} KB</td><td style="color:#f44336">${p.motivo}</td></tr>`).join(''):'<tr><td colspan="3" style="text-align:center;color:#5a5a5a;padding:14px">Sin rechazados.</td></tr>';
 }
 function renderMapaFijo(bloques,tams,total){
-  animarBloquesMem(bloques.map((b,i)=>{
-    if(b.pid) return{flex:b.tam/total,bg:getProcColor(b.pid)+'cc',title:`${b.pid} — ${b.usado}/${b.tam}KB`,label:b.pid,sub:b.usado+'KB'};
-    return{flex:b.tam/total,bg:'#1a2a1a',color:'#4caf5099',title:`Part.${i+1} LIBRE — ${b.tam}KB`,label:'LIBRE',sub:b.tam+'KB'};
-  }));
+  document.getElementById('mem-vis').innerHTML=bloques.map((b,i)=>{
+    const pct=(b.tam/total*100).toFixed(1),col=MCOLS[i%MCOLS.length];
+    return b.pid?`<div class="mv" style="width:${pct}%;background:${col}99"><span>${b.pid}</span><span style="font-size:7px;opacity:.7">${b.usado}KB</span></div>`
+      :`<div class="mv" style="width:${pct}%;background:#1a2a1a;color:#3a5a3a">LIBRE</div>`;
+  }).join('');
 }
 function renderMapaDin(mem,total){
-  animarBloquesMem(mem.map(b=>{
-    if(b.pid) return{flex:b.tam/total,bg:getProcColor(b.pid)+'cc',title:`${b.pid} — ${b.tam}KB`,label:b.pid,sub:b.tam+'KB'};
-    return{flex:b.tam/total,bg:'#1a2a1a',color:'#4caf5099',title:`Libre — ${b.tam}KB`,label:'LIBRE',sub:b.tam+'KB'};
-  }));
+  let ci=0;
+  document.getElementById('mem-vis').innerHTML=mem.map(b=>{
+    const pct=(b.tam/total*100).toFixed(1);
+    if(b.pid){const col=MCOLS[ci++%MCOLS.length];return `<div class="mv" style="width:${pct}%;background:${col}99"><span>${b.pid}</span><span style="font-size:7px;opacity:.7">${b.tam}KB</span></div>`;}
+    return `<div class="mv" style="width:${pct}%;background:#1a2a1a;color:#3a5a3a">LIBRE</div>`;
+  }).join('');
 }
 function limpiarMem(){
-  Object.keys(PROC_COLORS).forEach(k=>delete PROC_COLORS[k]); colorIdx=0;
-  document.getElementById('mem-visual').innerHTML='<div class="mv-block" style="flex:1;background:#1a2a1a;color:#4caf5088;font-size:12px">LIBRE</div>';
+  document.getElementById('mem-vis').innerHTML='<div class="mv" style="width:100%;background:#1a2a1a;color:#3a5a3a">LIBRE</div>';
   document.getElementById('mem-bar').textContent='—';
-  ['m-usada','m-libre','m-algo','m-frag','m-frag-ext','m-frag-status'].forEach(id=>document.getElementById(id).textContent='—');
+  ['m-usada','m-libre','m-algo','m-frag'].forEach(id=>document.getElementById(id).textContent='—');
   document.getElementById('m-asig').textContent='0'; document.getElementById('m-rech').textContent='0';
-  document.getElementById('tbl-mem').innerHTML='<tr><td colspan="6" style="text-align:center;color:#5a5a5a;padding:16px">Sin asignaciones.</td></tr>';
-  document.getElementById('tbl-noasig').innerHTML='<tr><td colspan="3" style="text-align:center;color:#5a5a5a;padding:16px">Sin rechazados.</td></tr>';
+  document.getElementById('tbl-mem').innerHTML='<tr><td colspan="6" style="text-align:center;color:#5a5a5a;padding:14px">Sin asignaciones.</td></tr>';
+  document.getElementById('tbl-noasig').innerHTML='<tr><td colspan="3" style="text-align:center;color:#5a5a5a;padding:14px">Sin rechazados.</td></tr>';
+}
+
+// ─── ALMACENAMIENTO ───
+function almKB(tam,unit){return unit==='MB'?tam*1024:unit==='GB'?tam*1024*1024:tam;}
+function discoTotalKB(){
+  const cap=parseFloat(document.getElementById('d-cap').value)||512;
+  const u=document.getElementById('d-cap-u').value;
+  return almKB(cap,u);
+}
+function blkKB(){return parseInt(document.getElementById('d-blk').value)||4;}
+function totalBloques(){return Math.floor(discoTotalKB()/blkKB());}
+
+function addArchivo(){
+  const nom=document.getElementById('a-nom').value.trim();
+  const tam=parseFloat(document.getElementById('a-tam').value);
+  const u=document.getElementById('a-tam-u').value;
+  const met=document.getElementById('a-met').value;
+  if(!nom||isNaN(tam)||tam<=0){alert('Completa nombre y tamaño.');return;}
+  const tamKB=almKB(tam,u);
+  const bloqReq=Math.ceil(tamKB/blkKB());
+  archivos.push({nom,tamKB,bloqReq,met,u,tam});
+  renderTblArch();
+  document.getElementById('a-narch').textContent=archivos.length;
+  document.getElementById('a-nom').value=''; document.getElementById('a-tam').value='';
+}
+
+function renderTblArch(){
+  const tb=document.getElementById('tbl-arch');
+  if(!archivos.length){tb.innerHTML='<tr><td colspan="4" style="text-align:center;color:#5a5a5a;padding:14px">Sin archivos.</td></tr>';return;}
+  tb.innerHTML=archivos.map(a=>`
+    <tr><td class="pid">${a.nom}</td><td>${a.tam} ${a.u}</td><td>${a.bloqReq}</td>
+    <td style="color:#4fc3f7;text-transform:capitalize">${a.met}</td></tr>`).join('');
+}
+
+function ejAlm(){
+  if(!archivos.length){alert('Agrega archivos primero.');return;}
+  const totB=totalBloques();
+  const bkKb=blkKB();
+  // Estado del disco: array de bloques {libre, archivo, tipo}
+  const disco=Array.from({length:totB},(_,i)=>({id:i,libre:true,archivo:null,tipo:null}));
+  const resul=[],noAsig=[];
+  let fragTotal=0, idxBlocks=0;
+  const archColorMap={};
+  let ci=0;
+
+  for(const arch of archivos){
+    archColorMap[arch.nom]=ACOLS[ci++%ACOLS.length];
+    const libres=disco.filter(b=>b.libre);
+    if(libres.length<arch.bloqReq){noAsig.push({...arch,motivo:'Espacio insuficiente'});continue;}
+
+    let asignados=[];
+    if(arch.met==='contigua'){
+      // Buscar bloque contiguo libre
+      let start=-1, count=0;
+      for(let i=0;i<disco.length;i++){
+        if(disco[i].libre){count++;if(count===1)start=i;if(count===arch.bloqReq)break;}
+        else{count=0;start=-1;}
+      }
+      if(count<arch.bloqReq){noAsig.push({...arch,motivo:'No hay espacio contiguo'});continue;}
+      for(let i=start;i<start+arch.bloqReq;i++){disco[i].libre=false;disco[i].archivo=arch.nom;disco[i].tipo='contigua';asignados.push(i);}
+      // Fragmentación interna (último bloque)
+      const tamUltimo=arch.tamKB-(arch.bloqReq-1)*bkKb;
+      fragTotal+=bkKb-tamUltimo;
+    } else if(arch.met==='enlazada'){
+      let count=0;
+      for(let i=0;i<disco.length&&count<arch.bloqReq;i++){
+        if(disco[i].libre){disco[i].libre=false;disco[i].archivo=arch.nom;disco[i].tipo=count<arch.bloqReq-1?'enlazada':'enlazada-fin';asignados.push(i);count++;}
+      }
+      const tamUltimo=arch.tamKB-(arch.bloqReq-1)*bkKb;
+      fragTotal+=bkKb-tamUltimo;
+    } else {
+      // Indexada: 1 bloque índice + bloqReq bloques datos
+      const needed=arch.bloqReq+1;
+      if(libres.length<needed){noAsig.push({...arch,motivo:'Espacio insuficiente (índice)'});continue;}
+      let count=0, idxB=-1;
+      for(let i=0;i<disco.length&&count<=arch.bloqReq;i++){
+        if(disco[i].libre){
+          if(count===0){idxB=i;disco[i].libre=false;disco[i].archivo=arch.nom;disco[i].tipo='indice';asignados.push(i);}
+          else{disco[i].libre=false;disco[i].archivo=arch.nom;disco[i].tipo='indexada';asignados.push(i);}
+          count++;
+        }
+      }
+      idxBlocks++;
+      const tamUltimo=arch.tamKB-(arch.bloqReq-1)*bkKb;
+      fragTotal+=bkKb-tamUltimo;
+    }
+    resul.push({...arch,bloqAsig:asignados,estado:'Asignado'});
+  }
+
+  // Render grid
+  const cols=16;
+  document.getElementById('disco-grid').style.gridTemplateColumns=`repeat(${cols},1fr)`;
+  document.getElementById('disco-grid').innerHTML=disco.map(b=>{
+    if(b.libre) return `<div class="blk libre" title="Bloque ${b.id} — Libre">${b.id}</div>`;
+    const col=archColorMap[b.archivo]||'#555';
+    const cls=b.tipo==='indice'?'idx-blk':b.tipo==='enlazada'||b.tipo==='enlazada-fin'?'ptr':'ocupado';
+    const lbl=b.tipo==='indice'?'IDX':b.archivo.substring(0,3).toUpperCase();
+    return `<div class="blk ${cls}" style="background:${col}cc" title="Bloque ${b.id} — ${b.archivo} (${b.tipo})">${b.id}<br><span style="font-size:6px">${lbl}</span></div>`;
+  }).join('');
+
+  const usados=disco.filter(b=>!b.libre).length;
+  const libresN=totB-usados;
+  document.getElementById('a-tot').textContent=totB;
+  document.getElementById('a-uso').textContent=usados;
+  document.getElementById('a-lib').textContent=libresN;
+  document.getElementById('a-asig').textContent=resul.length;
+  document.getElementById('a-rech').textContent=noAsig.length;
+  document.getElementById('a-frag').textContent=fragTotal.toFixed(1)+' KB';
+  document.getElementById('a-bidx').textContent=idxBlocks;
+  document.getElementById('d-cap-info').textContent=`(${totB} bloques de ${bkKb}KB)`;
+
+  // Leyenda
+  document.getElementById('leyenda-alm').innerHTML=Object.entries(archColorMap).map(([nom,col])=>
+    `<span style="color:#aaa">■ <span style="color:${col}">${nom}</span></span>`).join(' ');
+
+  // Métodos resumen
+  const metCount={};
+  archivos.forEach(a=>{metCount[a.met]=(metCount[a.met]||0)+1;});
+  document.getElementById('a-metodos').innerHTML=Object.entries(metCount).map(([m,n])=>
+    `<div style="margin-bottom:3px"><span style="color:#4fc3f7;text-transform:capitalize">${m}</span>: ${n} archivo(s)</div>`).join('');
+
+  // Tabla resultados
+  const allRes=[...resul,...noAsig.map(a=>({...a,bloqAsig:[],estado:'Rechazado'}))];
+  document.getElementById('tbl-alm-res').innerHTML=allRes.map(a=>`
+    <tr><td class="pid">${a.nom}</td><td>${a.tamKB} KB</td><td>${a.bloqReq}</td>
+    <td style="color:#4fc3f7;text-transform:capitalize">${a.met}</td>
+    <td>${a.bloqAsig&&a.bloqAsig.length?a.bloqAsig.join(', '):'—'}</td>
+    <td style="color:${a.estado==='Asignado'?'#4caf50':'#f44336'}">${a.estado}</td></tr>`).join('');
+}
+
+function limpiarAlm(){
+  archivos=[];
+  document.getElementById('disco-grid').innerHTML='<div class="blk libre" style="grid-column:1/-1;text-align:center;font-size:10px;color:#3a5a3a;padding:8px">Configura el disco y simula</div>';
+  document.getElementById('leyenda-alm').innerHTML='';
+  document.getElementById('d-cap-info').textContent='';
+  ['a-tot','a-uso','a-lib','a-frag','a-bidx'].forEach(id=>document.getElementById(id).textContent='—');
+  document.getElementById('a-asig').textContent='0'; document.getElementById('a-rech').textContent='0';
+  document.getElementById('a-narch').textContent='0'; document.getElementById('a-metodos').textContent='—';
+  document.getElementById('tbl-arch').innerHTML='<tr><td colspan="4" style="text-align:center;color:#5a5a5a;padding:14px">Sin archivos.</td></tr>';
+  document.getElementById('tbl-alm-res').innerHTML='<tr><td colspan="6" style="text-align:center;color:#5a5a5a;padding:14px">Sin simulación.</td></tr>';
 }

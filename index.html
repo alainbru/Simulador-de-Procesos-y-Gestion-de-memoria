@@ -4,243 +4,294 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Simulador OS</title>
-<link href="styles.css" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
 <!-- SIDEBAR -->
 <div class="sidebar" id="sidebar">
-  <div class="sidebar-header">
+  <div class="sb-header">
     <span class="title">Simulador OS</span>
-    <button class="toggle-btn" onclick="toggleSidebar()">
+    <button class="toggle-btn" onclick="toggleSB()">
       <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
     </button>
   </div>
-  <div class="nav-group">
-    <div class="nav-group-header open active-group" id="grp-plan" onclick="clickGroup('plan')">
-      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-      <span class="g-label">Planificación</span>
-      <svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-    </div>
-    <div class="nav-children open" id="ch-plan">
-      <div class="nav-item active" onclick="showPage('procesos')"><span>Procesos</span></div>
-    </div>
+  <!-- Planificación -->
+  <div class="ng-hdr open active-g" id="grp-plan" onclick="clickG('plan')">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+    <span class="g-lbl">Planificación</span>
+    <svg class="arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
   </div>
-  <div class="nav-group">
-    <div class="nav-group-header" id="grp-mem" onclick="clickGroup('mem')">
-      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="6" width="20" height="12" rx="2"/><line x1="6" y1="10" x2="6" y2="14"/><line x1="10" y1="10" x2="10" y2="14"/><line x1="14" y1="10" x2="14" y2="14"/><line x1="18" y1="10" x2="18" y2="14"/></svg>
-      <span class="g-label">Gestión de Memoria</span>
-      <svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-    </div>
-    <div class="nav-children" id="ch-mem">
-      <div class="nav-item" onclick="showPage('memoria')"><span>Memoria</span></div>
-    </div>
+  <div class="ng-ch open" id="ch-plan">
+    <div class="nav-item active" onclick="showPage('plan')"><span>Procesos</span></div>
   </div>
-  <div class="sidebar-footer">v1.0 — Sistemas Operativos</div>
+  <!-- Gestión Memoria -->
+  <div class="ng-hdr" id="grp-mem" onclick="clickG('mem')">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="6" width="20" height="12" rx="2"/><line x1="6" y1="10" x2="6" y2="14"/><line x1="10" y1="10" x2="10" y2="14"/><line x1="14" y1="10" x2="14" y2="14"/><line x1="18" y1="10" x2="18" y2="14"/></svg>
+    <span class="g-lbl">Gestión de Memoria</span>
+    <svg class="arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+  </div>
+  <div class="ng-ch" id="ch-mem">
+    <div class="nav-item" onclick="showPage('mem')"><span>Memoria</span></div>
+  </div>
+  <!-- Gestión Almacenamiento -->
+  <div class="ng-hdr" id="grp-alm" onclick="clickG('alm')">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+    <span class="g-lbl">Gestión de Almacenamiento</span>
+    <svg class="arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+  </div>
+  <div class="ng-ch" id="ch-alm">
+    <div class="nav-item" onclick="showPage('alm')"><span>Almacenamiento</span></div>
+  </div>
+  <div class="sb-footer">v1.0 — Sistemas Operativos</div>
 </div>
 
 <!-- MAIN -->
 <div class="main">
   <div class="topbar">
     <h2 id="page-title">Planificación de Procesos</h2>
-    <div class="topbar-right">
-      <div class="csv-global">
+    <div class="tb-right">
+      <div class="csv-glob">
         <label>CSV:</label>
-        <label id="csv-global-label" for="csv-global-input">📂 Cargar</label>
-        <input type="file" id="csv-global-input" accept=".csv" onchange="cargarCSVGlobal(event)">
-        <span class="csv-info" id="csv-info">Sin archivo</span>
+        <label id="csv-lbl" for="csv-inp">📂 Cargar</label>
+        <input type="file" id="csv-inp" accept=".csv" onchange="cargarCSV(event)">
+        <span class="csv-inf" id="csv-inf">Sin archivo</span>
       </div>
       <div id="btns-plan" style="display:flex;gap:6px;flex-wrap:wrap">
-        <button class="btn green"  onclick="ejecutarSRT()">▶ SRT</button>
-        <button class="btn orange" onclick="ejecutarRR()">▶ RR</button>
-        <button class="btn purple" onclick="ejecutarFCFS()">▶ FCFS</button>
-        <button class="btn teal"   onclick="ejecutarSPN()">▶ SPN</button>
+        <button class="btn green"  onclick="ejSRT()">▶ SRT</button>
+        <button class="btn orange" onclick="ejRR()">▶ RR</button>
+        <button class="btn purple" onclick="ejFCFS()">▶ FCFS</button>
+        <button class="btn teal"   onclick="ejSPN()">▶ SPN</button>
         <button class="btn"        onclick="reiniciar()">↺</button>
-        <button class="btn red"    onclick="limpiarTodo()">✕</button>
+        <button class="btn red"    onclick="limpiarPlan()">✕</button>
       </div>
       <div id="btns-mem" style="display:none;gap:6px;flex-wrap:wrap">
-        <button class="btn green"  onclick="ejecutarMem('ff')">▶ First Fit</button>
-        <button class="btn orange" onclick="ejecutarMem('bf')">▶ Best Fit</button>
-        <button class="btn purple" onclick="ejecutarMem('wf')">▶ Worst Fit</button>
-        <button class="btn red"    onclick="limpiarMem()">✕ Limpiar</button>
+        <button class="btn green"  onclick="ejMem('ff')">▶ First Fit</button>
+        <button class="btn orange" onclick="ejMem('bf')">▶ Best Fit</button>
+        <button class="btn purple" onclick="ejMem('wf')">▶ Worst Fit</button>
+        <button class="btn red"    onclick="limpiarMem()">✕</button>
+      </div>
+      <div id="btns-alm" style="display:none;gap:6px;flex-wrap:wrap">
+        <button class="btn indigo" onclick="ejAlm()">▶ Simular</button>
+        <button class="btn red"    onclick="limpiarAlm()">✕ Limpiar</button>
       </div>
     </div>
   </div>
 
   <div class="pages-wrap">
 
-    <!-- ═══════════════ PAGE PROCESOS ═══════════════ -->
-    <div class="page active" id="page-procesos">
+    <!-- ═══ PAGE PLANIFICACIÓN ═══ -->
+    <div class="page active" id="page-plan">
       <div class="content">
-
-        <!-- LEFT: formulario + gantt + tabla (scroll vertical) -->
-        <div class="left-panel" style="overflow-y:auto;padding:14px;gap:10px">
-
-          <!-- Formulario -->
-          <div class="section-label">Agregar proceso</div>
-          <div class="input-row">
-            <div class="field"><label>ID</label><input id="inp-id" placeholder="P1"></div>
-            <div class="field"><label>Llegada</label><input id="inp-arr" type="number" min="0" placeholder="0"></div>
-            <div class="field"><label>T.Servicio</label><input id="inp-cpu" type="number" min="1" placeholder="5"></div>
-            <div class="field"><label>Tamaño(KB)</label><input id="inp-tam" type="number" min="1" placeholder="100"></div>
-            <div class="field" style="display:flex;align-items:flex-end">
-              <button class="btn accent" style="width:100%" onclick="agregarProceso()">+ Agregar</button>
-            </div>
-          </div>
-          <div class="btn-row">
-            <div style="display:flex;align-items:center;gap:6px">
-              <label style="font-size:11px;color:#8a8a8a;white-space:nowrap">Quantum:</label>
-              <input id="inp-q" type="number" min="1" placeholder="2" style="width:55px;padding:4px 6px;background:#2a2a2a;border:1px solid #3a3a3a;border-radius:3px;color:#e0e0e0;font-size:12px;outline:none">
-            </div>
-          </div>
-
-          <div class="divider"></div>
-
-          <!-- Gantt -->
-          <div class="section-label">Diagrama de Gantt</div>
-          <div class="gantt-outer">
-            <div class="gantt-hdr">
-              <span>Ejecución</span>
-              <div style="display:flex;align-items:center;gap:8px">
-                <span style="font-size:10px;color:#5a5a5a">Vel:</span>
-                <input type="range" id="vel" min="1" max="5" value="3" style="width:70px;accent-color:#4fc3f7;height:4px;cursor:pointer">
-                <span id="gantt-info" style="font-size:11px">—</span>
+        <div class="left-panel">
+          <div>
+            <div class="sec-lbl">Agregar proceso</div>
+            <div class="ig">
+              <div class="f"><label>ID</label><input id="p-id" placeholder="P1"></div>
+              <div class="f"><label>Llegada</label><input id="p-arr" type="number" min="0" placeholder="0"></div>
+              <div class="f"><label>T.Servicio</label><input id="p-cpu" type="number" min="1" placeholder="5"></div>
+              <div class="f"><label>Tamaño(KB)</label><input id="p-tam" type="number" min="1" placeholder="100"></div>
+              <div class="f" style="display:flex;align-items:flex-end">
+                <button class="btn accent" style="width:100%" onclick="addProc()">+ Agregar</button>
               </div>
             </div>
-            <div class="gantt-scroll">
-              <div id="gantt-canvas" class="gantt-row"><span style="color:#4a4a4a;font-size:11px;align-self:center">Esperando ejecución...</span></div>
-            </div>
-          </div>
-
-          <div class="divider"></div>
-
-          <!-- Tabla DEBAJO del gantt con toggle -->
-          <div style="border:1px solid #2d2d2d;border-radius:4px;overflow:hidden">
-            <div id="tbl-proc-hdr" onclick="toggleTabla()" style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#252525;cursor:pointer;user-select:none;font-size:12px;color:#c0c0c0">
-              <span>📋 Tabla de Procesos</span>
-              <span id="tbl-proc-arrow" style="font-size:10px;color:#7a7a7a;transition:transform .2s;display:inline-block;transform:rotate(90deg)">▶</span>
-            </div>
-            <div id="tbl-proc-body" style="overflow-y:auto;max-height:500px;transition:max-height .3s ease">
-              <div class="table-wrap" style="border:none;border-radius:0">
-                <table>
-                  <thead><tr><th>ID</th><th>Llegada</th><th>T.Serv</th><th>Tam</th><th>Inicio</th><th>Fin</th><th>Espera</th><th>Retorno</th></tr></thead>
-                  <tbody id="tbl-proc"><tr><td colspan="8" style="text-align:center;color:#5a5a5a;padding:16px">Sin procesos.</td></tr></tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-
-        </div>
-
-        <!-- RIGHT -->
-        <div class="right-panel">
-          <div class="section-label">Resultados</div>
-          <div class="stat-block"><div class="lbl">Prom. Espera</div><div class="val" id="avg-e">—</div><div class="sub">ut</div></div>
-          <div class="stat-block"><div class="lbl">Prom. Retorno</div><div class="val" id="avg-r">—</div><div class="sub">ut</div></div>
-          <div class="stat-block"><div class="lbl">Algoritmo</div><div class="val" id="algo-name" style="font-size:14px;margin-top:2px">—</div></div>
-          <div class="divider"></div>
-          <div class="section-label">Detalles</div>
-          <div class="info-row"><span class="k">Procesos</span><span class="v" id="d-procs">0</span></div>
-          <div class="info-row"><span class="k">Quantum</span><span class="v" id="d-q">—</span></div>
-          <div class="info-row"><span class="k">T. total</span><span class="v" id="d-total">—</span></div>
-          <div class="info-row"><span class="k">Expulsiones</span><span class="v" id="d-exp">—</span></div>
-          <div class="info-row"><span class="k">Modo</span><span class="v" id="d-modo">—</span></div>
-        </div>
-
-      </div>
-    </div>
-
-    <!-- ═══════════════ PAGE MEMORIA ═══════════════ -->
-    <div class="page" id="page-memoria">
-      <div class="content">
-
-        <div class="left-panel" style="overflow-y:auto;padding:14px;gap:10px">
-
-          <!-- Config -->
-          <div class="section-label">Configuración</div>
-          <div class="input-row">
-            <div class="field"><label>Memoria Total (KB)</label><input id="mem-total" type="number" value="1024" min="1"></div>
-          </div>
-          <div class="btn-row">
-            <label class="toggle-check">
-              <input type="checkbox" id="chk-fija" onchange="toggleFija()"> Particiones Fijas
-            </label>
-          </div>
-          <div id="panel-fija" style="display:none;margin-top:4px;padding:10px;background:#1e2030;border:1px solid #2d3050;border-radius:4px">
-            <div style="font-size:11px;color:#7a7a7a;margin-bottom:6px">PARTICIONES (KB)</div>
-            <div id="part-list"></div>
             <div class="btn-row">
-              <button class="btn accent" style="font-size:11px;padding:4px 10px" onclick="addPart()">+ Agregar</button>
-              <button class="btn" style="font-size:11px;padding:4px 10px" onclick="delPart()">− Quitar</button>
-            </div>
-          </div>
-
-          <div class="divider"></div>
-
-          <!-- Mapa visual -->
-          <div class="section-label">Mapa de Memoria</div>
-          <div id="mem-visual" class="mem-visual" style="height:120px"><div class="mv-block" style="flex:1;background:#1a2a1a;color:#4caf5088;font-size:12px">LIBRE</div></div>
-          <div id="mem-bar" style="font-size:10px;color:#5a5a5a;margin-top:2px">—</div>
-
-          <div class="divider"></div>
-
-          <!-- Tabla asignados -->
-          <div class="table-section">
-            <div class="table-section-header" onclick="toggleSection('tbl-mem')">
-              <span>📋 Tabla de Asignación</span>
-              <span id="tbl-mem-arrow" class="section-arrow">▶</span>
-            </div>
-            <div class="table-section-body open" id="tbl-mem-body">
-              <div class="table-wrap">
-                <table>
-                  <thead><tr><th>Proceso</th><th>Tamaño</th><th>Partición</th><th>Base</th><th>Límite</th><th>Estado</th></tr></thead>
-                  <tbody id="tbl-mem"><tr><td colspan="6" style="text-align:center;color:#5a5a5a;padding:16px">Sin asignaciones.</td></tr></tbody>
-                </table>
+              <div style="display:flex;align-items:center;gap:6px">
+                <label style="font-size:11px;color:#8a8a8a;white-space:nowrap">Quantum:</label>
+                <input id="p-q" type="number" min="1" placeholder="2" style="width:55px;padding:4px 6px;background:#2a2a2a;border:1px solid #3a3a3a;border-radius:3px;color:#e0e0e0;font-size:12px;outline:none">
               </div>
             </div>
           </div>
-
-          <div class="divider"></div>
-
-          <!-- Tabla rechazados -->
-          <div class="table-section">
-            <div class="table-section-header" onclick="toggleSection('tbl-noasig')">
-              <span>⚠️ No Asignados</span>
-              <span id="tbl-noasig-arrow" class="section-arrow">▶</span>
-            </div>
-            <div class="table-section-body open" id="tbl-noasig-body">
-              <div class="table-wrap">
-                <table>
-                  <thead><tr><th>Proceso</th><th>Tamaño</th><th>Motivo</th></tr></thead>
-                  <tbody id="tbl-noasig"><tr><td colspan="3" style="text-align:center;color:#5a5a5a;padding:16px">Sin rechazados.</td></tr></tbody>
-                </table>
+          <div class="div"></div>
+          <div class="coll">
+            <div class="ch open" onclick="togColl(this)"><span>📋 Tabla de Procesos</span><span class="ca">▶</span></div>
+            <div class="cb open"><div class="tw">
+              <table><thead><tr><th>ID</th><th>Llegada</th><th>T.Serv</th><th>Tam</th><th>Inicio</th><th>Fin</th><th>Espera</th><th>Retorno</th></tr></thead>
+              <tbody id="tbl-proc"><tr><td colspan="8" style="text-align:center;color:#5a5a5a;padding:14px">Sin procesos.</td></tr></tbody></table>
+            </div></div>
+          </div>
+          <div class="div"></div>
+          <div>
+            <div class="sec-lbl">Diagrama de Gantt</div>
+            <div class="go">
+              <div class="gh">
+                <span>Ejecución</span>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="font-size:10px;color:#5a5a5a">Vel:</span>
+                  <input type="range" id="vel" min="1" max="5" value="3" style="width:70px;accent-color:#4fc3f7;height:4px;cursor:pointer">
+                  <span id="g-info" style="font-size:11px">—</span>
+                </div>
               </div>
+              <div class="gs"><div id="g-canvas" class="gr"><span style="color:#4a4a4a;font-size:11px">Esperando...</span></div></div>
             </div>
           </div>
-
         </div>
-
-        <!-- RIGHT MEM -->
         <div class="right-panel">
-          <div class="section-label">Resultados</div>
-          <div class="stat-block"><div class="lbl">Memoria Usada</div><div class="val" id="m-usada">—</div><div class="sub">KB</div></div>
-          <div class="stat-block"><div class="lbl">Memoria Libre</div><div class="val" id="m-libre">—</div><div class="sub">KB</div></div>
-          <div class="stat-block"><div class="lbl">Algoritmo</div><div class="val" id="m-algo" style="font-size:14px;margin-top:2px">—</div></div>
-          <div class="divider"></div>
-          <div class="section-label">Detalles</div>
-          <div class="info-row"><span class="k">Asignados</span><span class="v" id="m-asig">0</span></div>
-          <div class="info-row"><span class="k">Rechazados</span><span class="v" id="m-rech">0</span></div>
-          <div class="info-row"><span class="k">Frag. Interna</span><span class="v" id="m-frag">—</span></div>
-          <div class="info-row"><span class="k">Frag. Externa</span><span class="v" id="m-frag-ext">—</span></div>
-          <div class="info-row"><span class="k">Hay Fragmentación</span><span class="v" id="m-frag-status">—</span></div>
-          <div class="info-row"><span class="k">Modo</span><span class="v" id="m-modo">Dinámica</span></div>
+          <div class="sec-lbl">Resultados</div>
+          <div class="sb"><div class="sl">Prom. Espera</div><div class="sv" id="avg-e">—</div><div class="ss">ut</div></div>
+          <div class="sb"><div class="sl">Prom. Retorno</div><div class="sv" id="avg-r">—</div><div class="ss">ut</div></div>
+          <div class="sb"><div class="sl">Algoritmo</div><div class="sv" id="p-algo" style="font-size:13px;margin-top:2px">—</div></div>
+          <div class="div"></div>
+          <div class="sec-lbl">Detalles</div>
+          <div class="ir"><span class="k">Procesos</span><span class="v" id="d-procs">0</span></div>
+          <div class="ir"><span class="k">Quantum</span><span class="v" id="d-q">—</span></div>
+          <div class="ir"><span class="k">T. total</span><span class="v" id="d-tot">—</span></div>
+          <div class="ir"><span class="k">Expulsiones</span><span class="v" id="d-exp">—</span></div>
+          <div class="ir"><span class="k">Modo</span><span class="v" id="d-modo">—</span></div>
         </div>
-
       </div>
     </div>
 
-  </div><!-- /pages-wrap -->
-</div><!-- /main -->
+    <!-- ═══ PAGE MEMORIA ═══ -->
+    <div class="page" id="page-mem">
+      <div class="content">
+        <div class="left-panel">
+          <div>
+            <div class="sec-lbl">Configuración</div>
+            <div class="ig">
+              <div class="f"><label>Memoria Total (KB)</label><input id="m-total" type="number" value="1024" min="1"></div>
+            </div>
+            <div class="btn-row">
+              <label class="toggle-check"><input type="checkbox" id="chk-fija" onchange="togFija()"> Particiones Fijas</label>
+            </div>
+            <div id="panel-fija" style="display:none;margin-top:8px;padding:10px;background:#1e2030;border:1px solid #2d3050;border-radius:4px">
+              <div style="font-size:11px;color:#7a7a7a;margin-bottom:6px">PARTICIONES (KB)</div>
+              <div id="part-list"></div>
+              <div class="btn-row">
+                <button class="btn accent" style="font-size:11px;padding:4px 10px" onclick="addPart()">+ Agregar</button>
+                <button class="btn" style="font-size:11px;padding:4px 10px" onclick="delPart()">− Quitar</button>
+              </div>
+            </div>
+          </div>
+          <div class="div"></div>
+          <div>
+            <div class="sec-lbl">Mapa de Memoria</div>
+            <div id="mem-vis" class="mem-vis"><div class="mv" style="width:100%;background:#1a2a1a;color:#3a5a3a">LIBRE</div></div>
+            <div id="mem-bar" style="font-size:10px;color:#5a5a5a;margin-top:3px">—</div>
+          </div>
+          <div class="div"></div>
+          <div class="coll">
+            <div class="ch open" onclick="togColl(this)"><span>📋 Tabla de Asignación</span><span class="ca">▶</span></div>
+            <div class="cb open"><div class="tw">
+              <table><thead><tr><th>Proceso</th><th>Tamaño</th><th>Partición</th><th>Base</th><th>Límite</th><th>Estado</th></tr></thead>
+              <tbody id="tbl-mem"><tr><td colspan="6" style="text-align:center;color:#5a5a5a;padding:14px">Sin asignaciones.</td></tr></tbody></table>
+            </div></div>
+          </div>
+          <div class="div"></div>
+          <div class="coll">
+            <div class="ch" onclick="togColl(this)"><span>⚠️ No Asignados</span><span class="ca">▶</span></div>
+            <div class="cb"><div class="tw">
+              <table><thead><tr><th>Proceso</th><th>Tamaño</th><th>Motivo</th></tr></thead>
+              <tbody id="tbl-noasig"><tr><td colspan="3" style="text-align:center;color:#5a5a5a;padding:14px">Sin rechazados.</td></tr></tbody></table>
+            </div></div>
+          </div>
+        </div>
+        <div class="right-panel">
+          <div class="sec-lbl">Resultados</div>
+          <div class="sb"><div class="sl">Memoria Usada</div><div class="sv" id="m-usada">—</div><div class="ss">KB</div></div>
+          <div class="sb"><div class="sl">Memoria Libre</div><div class="sv" id="m-libre">—</div><div class="ss">KB</div></div>
+          <div class="sb"><div class="sl">Algoritmo</div><div class="sv" id="m-algo" style="font-size:13px;margin-top:2px">—</div></div>
+          <div class="div"></div>
+          <div class="sec-lbl">Detalles</div>
+          <div class="ir"><span class="k">Asignados</span><span class="v" id="m-asig">0</span></div>
+          <div class="ir"><span class="k">Rechazados</span><span class="v" id="m-rech">0</span></div>
+          <div class="ir"><span class="k">Frag. Interna</span><span class="v" id="m-frag">—</span></div>
+          <div class="ir"><span class="k">Modo</span><span class="v" id="m-modo">Dinámica</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ PAGE ALMACENAMIENTO ═══ -->
+    <div class="page" id="page-alm">
+      <div class="content">
+        <div class="left-panel">
+          <!-- Config disco -->
+          <div>
+            <div class="sec-lbl">Configuración del Disco</div>
+            <div class="ig">
+              <div class="f"><label>Capacidad del Disco</label><input id="d-cap" type="number" value="512" min="1" placeholder="512"></div>
+              <div class="f"><label>Unidad disco</label>
+                <select id="d-cap-u"><option value="MB">MB</option><option value="GB">GB</option></select>
+              </div>
+              <div class="f"><label>Tamaño de Bloque (KB)</label><input id="d-blk" type="number" value="4" min="1" placeholder="4"></div>
+            </div>
+          </div>
+          <div class="div"></div>
+          <!-- Agregar archivo -->
+          <div>
+            <div class="sec-lbl">Agregar Archivo</div>
+            <div class="ig">
+              <div class="f"><label>Nombre del Archivo</label><input id="a-nom" placeholder="archivo.txt"></div>
+              <div class="f"><label>Tamaño del Archivo</label><input id="a-tam" type="number" min="1" placeholder="10"></div>
+              <div class="f"><label>Unidad</label>
+                <select id="a-tam-u"><option value="KB">KB</option><option value="MB">MB</option></select>
+              </div>
+              <div class="f"><label>Método</label>
+                <select id="a-met">
+                  <option value="contigua">Contigua</option>
+                  <option value="enlazada">Enlazada</option>
+                  <option value="indexada">Indexada</option>
+                </select>
+              </div>
+              <div class="f" style="display:flex;align-items:flex-end">
+                <button class="btn accent" style="width:100%" onclick="addArchivo()">+ Agregar</button>
+              </div>
+            </div>
+          </div>
+          <div class="div"></div>
+          <!-- Tabla archivos -->
+          <div class="coll">
+            <div class="ch open" onclick="togColl(this)"><span>📁 Archivos a Almacenar</span><span class="ca">▶</span></div>
+            <div class="cb open"><div class="tw">
+              <table><thead><tr><th>Nombre</th><th>Tamaño</th><th>Bloques Req.</th><th>Método</th></tr></thead>
+              <tbody id="tbl-arch"><tr><td colspan="4" style="text-align:center;color:#5a5a5a;padding:14px">Sin archivos.</td></tr></tbody></table>
+            </div></div>
+          </div>
+          <div class="div"></div>
+          <!-- Mapa de disco -->
+          <div>
+            <div class="sec-lbl">Mapa del Disco <span id="d-cap-info" style="color:#5a5a5a;font-weight:400;font-size:10px"></span></div>
+            <div id="disco-grid" class="disco-grid" style="grid-template-columns:repeat(16,1fr)">
+              <div class="blk libre" style="grid-column:1/-1;text-align:center;font-size:10px;color:#3a5a3a;padding:8px">Configura el disco y simula</div>
+            </div>
+            <div style="display:flex;gap:12px;margin-top:6px;font-size:10px;flex-wrap:wrap">
+              <span style="color:#5a5a5a">■ <span style="color:#3a5a3a">Libre</span></span>
+              <span id="leyenda-alm"></span>
+            </div>
+          </div>
+          <div class="div"></div>
+          <!-- Tabla resultados -->
+          <div class="coll">
+            <div class="ch open" onclick="togColl(this)"><span>📋 Tabla de Asignación de Bloques</span><span class="ca">▶</span></div>
+            <div class="cb open"><div class="tw">
+              <table><thead><tr><th>Archivo</th><th>Tam</th><th>Bloques Req.</th><th>Método</th><th>Bloques Asig.</th><th>Estado</th></tr></thead>
+              <tbody id="tbl-alm-res"><tr><td colspan="6" style="text-align:center;color:#5a5a5a;padding:14px">Sin simulación.</td></tr></tbody></table>
+            </div></div>
+          </div>
+        </div>
+
+        <!-- RIGHT ALMACENAMIENTO -->
+        <div class="right-panel">
+          <div class="sec-lbl">Resumen</div>
+          <div class="sb"><div class="sl">Bloques Totales</div><div class="sv" id="a-tot">—</div><div class="ss">bloques</div></div>
+          <div class="sb"><div class="sl">Bloques Usados</div><div class="sv" id="a-uso">—</div><div class="ss">bloques</div></div>
+          <div class="sb"><div class="sl">Bloques Libres</div><div class="sv" id="a-lib">—</div><div class="ss">bloques</div></div>
+          <div class="div"></div>
+          <div class="sec-lbl">Detalles</div>
+          <div class="ir"><span class="k">Archivos</span><span class="v" id="a-narch">0</span></div>
+          <div class="ir"><span class="k">Asignados</span><span class="v" id="a-asig">0</span></div>
+          <div class="ir"><span class="k">Rechazados</span><span class="v" id="a-rech">0</span></div>
+          <div class="ir"><span class="k">Frag. Interna</span><span class="v" id="a-frag">—</span></div>
+          <div class="ir"><span class="k">Bloq. Índice</span><span class="v" id="a-bidx">—</span></div>
+          <div class="div"></div>
+          <div class="sec-lbl">Métodos usados</div>
+          <div id="a-metodos" style="font-size:11px;color:#7a7a7a">—</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- pages-wrap -->
+</div><!-- main -->
 
 <script src="script.js"></script>
 </body>
