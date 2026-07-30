@@ -58,14 +58,18 @@
           <input type="file" id="csv-inp" accept=".csv" onchange="cargarCSV(event)">
           <span class="csv-inf" id="csv-inf">Sin archivo</span>
         </div>
-        <div id="alm-top-controls" class="alm-top-controls" style="display:none">
-          <label for="alm-metodo">Método:</label>
-          <select id="alm-metodo">
-            <option value="contigua">Contigua</option>
-            <option value="enlazada">Enlazada</option>
-            <option value="indexada">Indexada</option>
-          </select>
-        </div>
+            <div class="alm-top-controls" style="display:none">
+              <label for="alm-metodo">Método:</label>
+              <select id="alm-metodo" onchange="onAlmMetodoChange()">
+                <option value="contigua">Contigua</option>
+                <option value="enlazada">Enlazada</option>
+                <option value="indexada">Indexada</option>
+                <option value="multinivel">Asignación multinivel</option>
+                <option value="fat">FAT</option>
+                <option value="extension">Basada en extensión</option>
+                <option value="bitmap">Bitmap</option>
+              </select>
+            </div>
         <div class="method-stack">
           <div id="btns-plan" style="display:flex;gap:6px;flex-wrap:wrap">
             <button class="btn green"  onclick="ejSRT()">▶ SRT</button>
@@ -158,44 +162,48 @@
     <div class="page" id="page-mem">
       <div class="content">
         <div class="left-panel">
-          <div>
-            <div class="sec-lbl">Configuración</div>
-            <div class="ig">
-              <div class="f"><label>Memoria Total (KB)</label><input id="m-total" type="number" value="1024" min="1"></div>
-            </div>
-            <div class="btn-row">
-              <label class="toggle-check"><input type="checkbox" id="chk-fija" onchange="togFija()"> Particiones Fijas</label>
-            </div>
-            <div id="panel-fija" style="display:none;margin-top:8px;padding:10px;background:#1e2030;border:1px solid #2d3050;border-radius:4px">
-              <div style="font-size:11px;color:#7a7a7a;margin-bottom:6px">PARTICIONES (KB)</div>
-              <div id="part-list"></div>
+          <div id="mem-clasica-config">
+            <div>
+              <div class="sec-lbl">Configuración</div>
+              <div class="ig">
+                <div class="f"><label>Memoria Total (KB)</label><input id="m-total" type="number" value="1024" min="1"></div>
+              </div>
               <div class="btn-row">
-                <button class="btn accent" style="font-size:11px;padding:4px 10px" onclick="addPart()">+ Agregar</button>
-                <button class="btn" style="font-size:11px;padding:4px 10px" onclick="delPart()">− Quitar</button>
+                <label class="toggle-check"><input type="checkbox" id="chk-fija" onchange="togFija()"> Particiones Fijas</label>
+              </div>
+              <div id="panel-fija" style="display:none;margin-top:8px;padding:10px;background:#1e2030;border:1px solid #2d3050;border-radius:4px">
+                <div style="font-size:11px;color:#7a7a7a;margin-bottom:6px">PARTICIONES (KB)</div>
+                <div id="part-list"></div>
+                <div class="btn-row">
+                  <button class="btn accent" style="font-size:11px;padding:4px 10px" onclick="addPart()">+ Agregar</button>
+                  <button class="btn" style="font-size:11px;padding:4px 10px" onclick="delPart()">− Quitar</button>
+                </div>
               </div>
             </div>
           </div>
           <div class="div"></div>
-          <div>
-            <div class="sec-lbl">Mapa de Memoria</div>
-            <div id="mem-vis" class="mem-vis"><div class="mv" style="width:100%;background:#1a2a1a;color:#3a5a3a">LIBRE</div></div>
-            <div id="mem-bar" style="font-size:10px;color:#5a5a5a;margin-top:3px">—</div>
-          </div>
-          <div class="div"></div>
-          <div class="coll">
-            <div class="ch open" onclick="togColl(this)"><span>📋 Tabla de Asignación</span><span class="ca">▶</span></div>
-            <div class="cb open"><div class="tw">
-              <table><thead><tr><th>Proceso</th><th>Tamaño</th><th>Partición</th><th>Base</th><th>Límite</th><th>Estado</th></tr></thead>
-              <tbody id="tbl-mem"><tr><td colspan="6" style="text-align:center;color:#5a5a5a;padding:14px">Sin asignaciones.</td></tr></tbody></table>
-            </div></div>
-          </div>
-          <div class="div"></div>
-          <div class="coll">
-            <div class="ch" onclick="togColl(this)"><span>⚠️ No Asignados</span><span class="ca">▶</span></div>
-            <div class="cb"><div class="tw">
-              <table><thead><tr><th>Proceso</th><th>Tamaño</th><th>Motivo</th></tr></thead>
-              <tbody id="tbl-noasig"><tr><td colspan="3" style="text-align:center;color:#5a5a5a;padding:14px">Sin rechazados.</td></tr></tbody></table>
-            </div></div>
+          <div id="mem-clasica-wrap">
+            <div>
+              <div class="sec-lbl">Mapa de Memoria</div>
+              <div id="mem-vis" class="mem-vis"><div class="mv" style="width:100%;background:#1a2a1a;color:#3a5a3a">LIBRE</div></div>
+              <div id="mem-bar" style="font-size:10px;color:#5a5a5a;margin-top:3px">—</div>
+            </div>
+            <div class="div"></div>
+            <div class="coll">
+              <div class="ch open" onclick="togColl(this)"><span>📋 Tabla de Asignación</span><span class="ca">▶</span></div>
+              <div class="cb open"><div class="tw">
+                <table><thead><tr><th>Proceso</th><th>Tamaño</th><th>Partición</th><th>Base</th><th>Límite</th><th>Estado</th></tr></thead>
+                <tbody id="tbl-mem"><tr><td colspan="6" style="text-align:center;color:#5a5a5a;padding:14px">Sin asignaciones.</td></tr></tbody></table>
+              </div></div>
+            </div>
+            <div class="div"></div>
+            <div class="coll">
+              <div class="ch" onclick="togColl(this)"><span>⚠️ No Asignados</span><span class="ca">▶</span></div>
+              <div class="cb"><div class="tw">
+                <table><thead><tr><th>Proceso</th><th>Tamaño</th><th>Motivo</th></tr></thead>
+                <tbody id="tbl-noasig"><tr><td colspan="3" style="text-align:center;color:#5a5a5a;padding:14px">Sin rechazados.</td></tr></tbody></table>
+              </div></div>
+            </div>
           </div>
         </div>
         <div class="right-panel">
@@ -227,22 +235,24 @@
               </div>
               <div class="f"><label>Tamaño de Bloque (KB)</label><input id="d-blk" type="number" value="4" min="1" placeholder="4"></div>
             </div>
-          </div>
-          <div class="div"></div>
-          <!-- Agregar archivo -->
-          <div>
-            <div class="sec-lbl">Agregar Archivo</div>
-            <div class="ig">
-              <div class="f"><label>Nombre del Archivo</label><input id="a-nom" placeholder="archivo.txt"></div>
-              <div class="f"><label>Tamaño del Archivo</label><input id="a-tam" type="number" min="1" placeholder="10"></div>
-              <div class="f"><label>Unidad</label>
-                <select id="a-tam-u"><option value="KB">KB</option><option value="MB">MB</option></select>
-              </div>
-              <div class="f" style="display:flex;align-items:flex-end">
-                <button class="btn accent" style="width:100%" onclick="addArchivo()">+ Agregar</button>
+            <div class="ig" style="margin-top:8px">
+              <div class="f"><label>Método de asignación</label>
+                  <!-- Método de asignación movido al control superior (barra) -->
+                  <select id="alm-metodo" onchange="onAlmMetodoChange()">
+                    <option value="contigua">Contigua</option>
+                    <option value="enlazada">Enlazada</option>
+                    <option value="indexada">Indexada</option>
+                    <option value="multinivel">Asignación multinivel</option>
+                    <option value="fat">FAT</option>
+                    <option value="extension">Basada en extensión</option>
+                    <option value="bitmap">Bitmap</option>
+                  </select>
               </div>
             </div>
           </div>
+          <div class="div"></div>
+          <!-- Agregar archivo -->
+         
           <div class="div"></div>
           <!-- Tabla archivos -->
           <div class="coll">
