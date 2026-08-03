@@ -1,5 +1,7 @@
 archivo,tamano,unidad
-archivo1,10,KB
-archivo2,2,MB
-archivo3,6,KB
-archivo4,3,KB
+Docs,220,KB
+Img,120,KB
+Audio,70,KB
+Video,180,KB
+Backup,90,KB
+Audio,20,KB

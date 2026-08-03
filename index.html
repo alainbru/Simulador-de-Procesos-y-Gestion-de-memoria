@@ -58,18 +58,6 @@
           <input type="file" id="csv-inp" accept=".csv" onchange="cargarCSV(event)">
           <span class="csv-inf" id="csv-inf">Sin archivo</span>
         </div>
-            <div class="alm-top-controls" style="display:none">
-              <label for="alm-metodo">Método:</label>
-              <select id="alm-metodo" onchange="onAlmMetodoChange()">
-                <option value="contigua">Contigua</option>
-                <option value="enlazada">Enlazada</option>
-                <option value="indexada">Indexada</option>
-                <option value="multinivel">Asignación multinivel</option>
-                <option value="fat">FAT</option>
-                <option value="extension">Basada en extensión</option>
-                <option value="bitmap">Bitmap</option>
-              </select>
-            </div>
         <div class="method-stack">
           <div id="btns-plan" style="display:flex;gap:6px;flex-wrap:wrap">
             <button class="btn green"  onclick="ejSRT()">▶ SRT</button>
@@ -87,6 +75,15 @@
           </div>
           <div id="btns-alm" style="display:none;gap:6px;flex-wrap:wrap">
             <button class="btn indigo" onclick="ejAlm()">▶ Simular</button>
+            <select id="alm-metodo" class="btn indigo alm-method-select" aria-label="Método de asignación" onchange="onAlmMetodoChange()">
+              <option value="contigua">Contigua</option>
+              <option value="enlazada">Enlazada</option>
+              <option value="indexada">Indexada</option>
+              <option value="multinivel">Asignación multinivel</option>
+              <option value="fat">FAT</option>
+              <option value="extension">Basada en extensión</option>
+              <option value="bitmap">Bitmap</option>
+            </select>
             <button class="btn red"    onclick="limpiarAlm()">✕ Limpiar</button>
           </div>
         </div>
@@ -229,30 +226,26 @@
           <div>
             <div class="sec-lbl">Configuración del Disco</div>
             <div class="ig">
-              <div class="f"><label>Capacidad del Disco</label><input id="d-cap" type="number" value="512" min="1" placeholder="512"></div>
+              <div class="f"><label>Capacidad del Disco</label><input id="d-cap" type="number" value="1" min="1" placeholder="512"></div>
               <div class="f"><label>Unidad disco</label>
                 <select id="d-cap-u"><option value="MB">MB</option><option value="GB">GB</option></select>
               </div>
-              <div class="f"><label>Tamaño de Bloque (KB)</label><input id="d-blk" type="number" value="4" min="1" placeholder="4"></div>
-            </div>
-            <div class="ig" style="margin-top:8px">
-              <div class="f"><label>Método de asignación</label>
-                  <!-- Método de asignación movido al control superior (barra) -->
-                  <select id="alm-metodo" onchange="onAlmMetodoChange()">
-                    <option value="contigua">Contigua</option>
-                    <option value="enlazada">Enlazada</option>
-                    <option value="indexada">Indexada</option>
-                    <option value="multinivel">Asignación multinivel</option>
-                    <option value="fat">FAT</option>
-                    <option value="extension">Basada en extensión</option>
-                    <option value="bitmap">Bitmap</option>
-                  </select>
-              </div>
+              <div class="f"><label>Tamaño de Bloque (KB)</label><input id="d-blk" type="number" value="100" min="1" placeholder="4"></div>
             </div>
           </div>
           <div class="div"></div>
-          <!-- Agregar archivo -->
-         
+          <div class="sec-lbl">Agregar archivo</div>
+          <div class="ig">
+            <div class="f"><label>Nombre</label><input id="a-nom" placeholder="doc01"></div>
+            <div class="f"><label>Tamaño</label><input id="a-tam" type="number" min="1" placeholder="120"></div>
+            <div class="f"><label>Unidad</label><select id="a-tam-u"><option value="KB">KB</option><option value="MB">MB</option><option value="GB">GB</option></select></div>
+            <div class="f" style="display:flex;align-items:flex-end">
+              <button class="btn accent" style="width:100%" onclick="addArchivo()">+ Agregar</button>
+            </div>
+          </div>
+          <div class="btn-row">
+            <button class="btn" onclick="cargarEjemploAlm()">↺ Cargar ejemplo</button>
+          </div>
           <div class="div"></div>
           <!-- Tabla archivos -->
           <div class="coll">
@@ -263,11 +256,29 @@
             </div></div>
           </div>
           <div class="div"></div>
+          <div class="alm-sim-card" id="alm-sim-card">
+            <div class="alm-sim-head">
+              <div>
+                <div class="alm-sim-kicker">Simulación visual</div>
+                <div class="alm-sim-title" id="alm-sim-title">Selecciona un método</div>
+              </div>
+              <div class="alm-sim-pill" id="alm-sim-method">—</div>
+            </div>
+            <div class="alm-sim-body" id="alm-sim-body">El mapa del disco mostrará cómo se asignan los bloques según el método que elijas.</div>
+            <div class="alm-sim-legend" id="alm-sim-legend">
+              <span class="legend-chip chip-free">Libre</span>
+              <span class="legend-chip chip-data">Bloque ocupando</span>
+              <span class="legend-chip chip-link">Relación</span>
+            </div>
+          </div>
           <!-- Mapa de disco -->
           <div>
             <div class="sec-lbl">Mapa del Disco <span id="d-cap-info" style="color:#5a5a5a;font-weight:400;font-size:10px"></span></div>
-            <div id="disco-grid" class="disco-grid" style="grid-template-columns:repeat(16,1fr)">
-              <div class="blk libre" style="grid-column:1/-1;text-align:center;font-size:10px;color:#3a5a3a;padding:8px">Configura el disco y simula</div>
+            <div id="disco-wrap" class="disco-wrap">
+              <svg id="disco-overlay" class="disco-overlay" viewBox="0 0 480 120"></svg>
+              <div id="disco-grid" class="disco-grid" style="grid-template-columns:repeat(16,1fr)">
+                <div class="blk libre" style="grid-column:1/-1;text-align:center;font-size:10px;color:#3a5a3a;padding:8px">Configura el disco y simula</div>
+              </div>
             </div>
             <div style="display:flex;gap:12px;margin-top:6px;font-size:10px;flex-wrap:wrap">
               <span style="color:#5a5a5a">■ <span style="color:#3a5a3a">Libre</span></span>
@@ -308,6 +319,8 @@
   </div><!-- pages-wrap -->
 </div><!-- main -->
 
-<script src="script.js"></script>
+<script src="planificacion.js"></script>
+<script src="memoria.js"></script>
+<script src="almacenamiento.js"></script>
 </body>
 </html>
