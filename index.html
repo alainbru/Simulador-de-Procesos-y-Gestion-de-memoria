@@ -5,6 +5,40 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Simulador OS</title>
 <link rel="stylesheet" href="styles.css">
+<style>
+  /* ─── Scroll de toda la pantalla ─── */
+  html, body{ height: auto; min-height: 100%; }
+  body{ overflow-y: auto; }
+  .main{ overflow-y: auto; max-height: none; height: auto; min-height: 100vh; }
+  .pages-wrap{ overflow: visible; }
+
+  /* ─── Mapa del disco como pieza central de la página de Almacenamiento ─── */
+  .alm-map-centerpiece{
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 16px;
+    background: #14161f;
+    border: 1px solid #2d3050;
+    border-radius: 10px;
+    box-shadow: 0 0 0 1px rgba(79,195,247,.08), 0 8px 24px rgba(0,0,0,.35);
+    box-sizing: border-box;
+  }
+  .alm-map-centerpiece .sec-lbl{ margin-bottom: 8px; }
+  .disco-wrap-lg{
+    width: 100%;
+    max-height: 260px; /* el mapa ahora se limita a 5 filas, ya no debería necesitar mucho más */
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  .alm-upload-btn{
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+  }
+  #alm-csv-inp{ display: none; }
+</style>
 </head>
 <body>
 
@@ -51,6 +85,7 @@
   <div class="topbar">
     <h2 id="page-title">Planificación de Procesos</h2>
     <div class="tb-right">
+      <button id="theme-toggle" class="btn theme-toggle" onclick="toggleTheme()" title="Cambiar tema">🌙 Oscuro</button>
       <div class="toolbar-controls">
         <div class="csv-glob">
           <label>CSV:</label>
@@ -73,7 +108,10 @@
             <button class="btn purple" onclick="ejMem('wf')">▶ Worst Fit</button>
             <button class="btn red"    onclick="limpiarMem()">✕</button>
           </div>
-          <div id="btns-alm" style="display:none;gap:6px;flex-wrap:wrap">
+          <div id="btns-alm" style="display:none;gap:6px;flex-wrap:wrap;align-items:center">
+            <label class="btn indigo alm-upload-btn" for="alm-csv-inp" title="Cargar archivos desde CSV (nombre,tamaño,unidad)">📂 Cargar</label>
+            <input type="file" id="alm-csv-inp" accept=".csv" onchange="cargarArchivosCSV(event)">
+            <button class="btn" onclick="cargarEjemploAlm()">↺ Ejemplo</button>
             <button class="btn indigo" onclick="ejAlm()">▶ Simular</button>
             <select id="alm-metodo" class="btn indigo alm-method-select" aria-label="Método de asignación" onchange="onAlmMetodoChange()">
               <option value="contigua">Contigua</option>
@@ -232,30 +270,29 @@
               </div>
               <div class="f"><label>Tamaño de Bloque (KB)</label><input id="d-blk" type="number" value="100" min="1" placeholder="4"></div>
             </div>
-          </div>
-          <div class="div"></div>
-          <div class="sec-lbl">Agregar archivo</div>
-          <div class="ig">
-            <div class="f"><label>Nombre</label><input id="a-nom" placeholder="doc01"></div>
-            <div class="f"><label>Tamaño</label><input id="a-tam" type="number" min="1" placeholder="120"></div>
-            <div class="f"><label>Unidad</label><select id="a-tam-u"><option value="KB">KB</option><option value="MB">MB</option><option value="GB">GB</option></select></div>
-            <div class="f" style="display:flex;align-items:flex-end">
-              <button class="btn accent" style="width:100%" onclick="addArchivo()">+ Agregar</button>
+            <div style="font-size:10px;color:#5a5a5a;margin-top:6px">
+              Para agregar archivos usa <b>📂 Cargar</b> (CSV: <code>nombre,tamaño,unidad</code>) o <b>↺ Ejemplo</b>, arriba junto a ▶ Simular.
             </div>
           </div>
-          <div class="btn-row">
-            <button class="btn" onclick="cargarEjemploAlm()">↺ Cargar ejemplo</button>
+          <div class="div"></div>
+
+          <!-- MAPA DEL DISCO — pieza central de la página -->
+          <div class="alm-map-centerpiece">
+            <div class="sec-lbl" style="text-align:center">Mapa del Disco <span id="d-cap-info" style="color:#5a5a5a;font-weight:400;font-size:10px"></span></div>
+            <div id="disco-wrap" class="disco-wrap disco-wrap-lg">
+              <svg id="disco-overlay" class="disco-overlay" viewBox="0 0 480 120"></svg>
+              <div id="disco-grid" class="disco-grid" style="grid-template-columns:repeat(16,1fr)">
+                <div class="blk libre" style="grid-column:1/-1;text-align:center;font-size:10px;color:#3a5a3a;padding:8px">Carga archivos con «📂 Cargar» o «↺ Ejemplo» (arriba) y presiona «▶ Simular»</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:12px;margin-top:6px;font-size:10px;flex-wrap:wrap;justify-content:center">
+              <span style="color:#5a5a5a">■ <span style="color:#3a5a3a">Libre</span></span>
+              <span id="leyenda-alm"></span>
+            </div>
+            <!-- alm-extra-panel (Tabla FAT / Bitmap / Extensiones / Multinivel) se inyecta aquí abajo por JS -->
           </div>
           <div class="div"></div>
-          <!-- Tabla archivos -->
-          <div class="coll">
-            <div class="ch open" onclick="togColl(this)"><span>📁 Archivos a Almacenar</span><span class="ca">▶</span></div>
-            <div class="cb open"><div class="tw">
-              <table><thead><tr><th>Nombre</th><th>Tamaño</th><th>Bloques Req.</th><th>Método</th></tr></thead>
-              <tbody id="tbl-arch"><tr><td colspan="4" style="text-align:center;color:#5a5a5a;padding:14px">Sin archivos.</td></tr></tbody></table>
-            </div></div>
-          </div>
-          <div class="div"></div>
+
           <div class="alm-sim-card" id="alm-sim-card">
             <div class="alm-sim-head">
               <div>
@@ -271,19 +308,16 @@
               <span class="legend-chip chip-link">Relación</span>
             </div>
           </div>
-          <!-- Mapa de disco -->
-          <div>
-            <div class="sec-lbl">Mapa del Disco <span id="d-cap-info" style="color:#5a5a5a;font-weight:400;font-size:10px"></span></div>
-            <div id="disco-wrap" class="disco-wrap">
-              <svg id="disco-overlay" class="disco-overlay" viewBox="0 0 480 120"></svg>
-              <div id="disco-grid" class="disco-grid" style="grid-template-columns:repeat(16,1fr)">
-                <div class="blk libre" style="grid-column:1/-1;text-align:center;font-size:10px;color:#3a5a3a;padding:8px">Configura el disco y simula</div>
-              </div>
-            </div>
-            <div style="display:flex;gap:12px;margin-top:6px;font-size:10px;flex-wrap:wrap">
-              <span style="color:#5a5a5a">■ <span style="color:#3a5a3a">Libre</span></span>
-              <span id="leyenda-alm"></span>
-            </div>
+          <!-- alm-step-controls (⏮ ◀ ▶ ▶| + barra de progreso) se inyecta aquí abajo por JS -->
+          <div class="div"></div>
+
+          <!-- Tabla archivos -->
+          <div class="coll">
+            <div class="ch open" onclick="togColl(this)"><span>📁 Archivos a Almacenar</span><span class="ca">▶</span></div>
+            <div class="cb open"><div class="tw">
+              <table><thead><tr><th>Nombre</th><th>Tamaño</th><th>Bloques Req.</th><th>Método</th></tr></thead>
+              <tbody id="tbl-arch"><tr><td colspan="4" style="text-align:center;color:#5a5a5a;padding:14px">Sin archivos.</td></tr></tbody></table>
+            </div></div>
           </div>
           <div class="div"></div>
           <!-- Tabla resultados -->
@@ -322,5 +356,6 @@
 <script src="planificacion.js"></script>
 <script src="memoria.js"></script>
 <script src="almacenamiento.js"></script>
+<script src="script.js"></script>
 </body>
 </html>
