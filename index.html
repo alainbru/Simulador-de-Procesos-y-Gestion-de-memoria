@@ -18,8 +18,8 @@
     max-width: 100%;
     margin: 0 auto;
     padding: 16px;
-    background: #14161f;
-    border: 1px solid #2d3050;
+    background: var(--app-box);
+    border: 1px solid var(--app-border);
     border-radius: 10px;
     box-shadow: 0 0 0 1px rgba(79,195,247,.08), 0 8px 24px rgba(0,0,0,.35);
     box-sizing: border-box;
@@ -148,8 +148,8 @@
             </div>
             <div class="btn-row">
               <div style="display:flex;align-items:center;gap:6px">
-                <label style="font-size:11px;color:#8a8a8a;white-space:nowrap">Quantum:</label>
-                <input id="p-q" type="number" min="1" placeholder="2" style="width:55px;padding:4px 6px;background:#2a2a2a;border:1px solid #3a3a3a;border-radius:3px;color:#e0e0e0;font-size:12px;outline:none">
+                <label style="font-size:11px;color:var(--app-text-muted);white-space:nowrap">Quantum:</label>
+                <input id="p-q" type="number" min="1" placeholder="2" style="width:55px;padding:4px 6px;background:var(--app-input);border:1px solid var(--app-input-border);border-radius:3px;color:var(--app-text-strong);font-size:12px;outline:none">
               </div>
             </div>
           </div>
@@ -158,7 +158,7 @@
             <div class="ch open" onclick="togColl(this)"><span>📋 Tabla de Procesos</span><span class="ca">▶</span></div>
             <div class="cb open"><div class="tw">
               <table><thead><tr><th>ID</th><th>Llegada</th><th>T.Serv</th><th>Tam</th><th>Inicio</th><th>Fin</th><th>Espera</th><th>Retorno</th></tr></thead>
-              <tbody id="tbl-proc"><tr><td colspan="8" style="text-align:center;color:#5a5a5a;padding:14px">Sin procesos.</td></tr></tbody></table>
+              <tbody id="tbl-proc"><tr><td colspan="8" style="text-align:center;color:var(--app-text-muted);padding:14px">Sin procesos.</td></tr></tbody></table>
             </div></div>
           </div>
           <div class="div"></div>
@@ -168,12 +168,12 @@
               <div class="gh">
                 <span>Ejecución</span>
                 <div style="display:flex;align-items:center;gap:8px">
-                  <span style="font-size:10px;color:#5a5a5a">Vel:</span>
-                  <input type="range" id="vel" min="1" max="5" value="3" style="width:70px;accent-color:#4fc3f7;height:4px;cursor:pointer">
+                  <span style="font-size:10px;color:var(--app-text-muted)">Vel:</span>
+                  <input type="range" id="vel" min="1" max="5" value="3" style="width:70px;accent-color:var(--app-accent);height:4px;cursor:pointer">
                   <span id="g-info" style="font-size:11px">—</span>
                 </div>
               </div>
-              <div class="gs"><div id="g-canvas" class="gr"><span style="color:#4a4a4a;font-size:11px">Esperando...</span></div></div>
+              <div class="gs"><div id="g-canvas" class="gr"><span style="color:var(--app-text-muted);font-size:11px">Esperando...</span></div></div>
             </div>
           </div>
         </div>
@@ -206,8 +206,8 @@
               <div class="btn-row">
                 <label class="toggle-check"><input type="checkbox" id="chk-fija" onchange="togFija()"> Particiones Fijas</label>
               </div>
-              <div id="panel-fija" style="display:none;margin-top:8px;padding:10px;background:#1e2030;border:1px solid #2d3050;border-radius:4px">
-                <div style="font-size:11px;color:#7a7a7a;margin-bottom:6px">PARTICIONES (KB)</div>
+              <div id="panel-fija" style="display:none;margin-top:8px;padding:10px;background:var(--app-surface-2);border:1px solid var(--app-border);border-radius:4px">
+                <div style="font-size:11px;color:var(--app-text-muted);margin-bottom:6px">PARTICIONES (KB)</div>
                 <div id="part-list"></div>
                 <div class="btn-row">
                   <button class="btn accent" style="font-size:11px;padding:4px 10px" onclick="addPart()">+ Agregar</button>
@@ -220,15 +220,15 @@
           <div id="mem-clasica-wrap">
             <div>
               <div class="sec-lbl">Mapa de Memoria</div>
-              <div id="mem-vis" class="mem-vis"><div class="mv" style="width:100%;background:#1a2a1a;color:#3a5a3a">LIBRE</div></div>
-              <div id="mem-bar" style="font-size:10px;color:#5a5a5a;margin-top:3px">—</div>
+              <div id="mem-vis" class="mem-vis"><div class="mv" style="width:100%;background:var(--app-libre-bg);color:var(--app-libre-text)">LIBRE</div></div>
+              <div id="mem-bar" style="font-size:10px;color:var(--app-text-muted);margin-top:3px">—</div>
             </div>
             <div class="div"></div>
             <div class="coll">
               <div class="ch open" onclick="togColl(this)"><span>📋 Tabla de Asignación</span><span class="ca">▶</span></div>
               <div class="cb open"><div class="tw">
                 <table><thead><tr><th>Proceso</th><th>Tamaño</th><th>Partición</th><th>Base</th><th>Límite</th><th>Estado</th></tr></thead>
-                <tbody id="tbl-mem"><tr><td colspan="6" style="text-align:center;color:#5a5a5a;padding:14px">Sin asignaciones.</td></tr></tbody></table>
+                <tbody id="tbl-mem"><tr><td colspan="6" style="text-align:center;color:var(--app-text-muted);padding:14px">Sin asignaciones.</td></tr></tbody></table>
               </div></div>
             </div>
             <div class="div"></div>
@@ -236,7 +236,7 @@
               <div class="ch" onclick="togColl(this)"><span>⚠️ No Asignados</span><span class="ca">▶</span></div>
               <div class="cb"><div class="tw">
                 <table><thead><tr><th>Proceso</th><th>Tamaño</th><th>Motivo</th></tr></thead>
-                <tbody id="tbl-noasig"><tr><td colspan="3" style="text-align:center;color:#5a5a5a;padding:14px">Sin rechazados.</td></tr></tbody></table>
+                <tbody id="tbl-noasig"><tr><td colspan="3" style="text-align:center;color:var(--app-text-muted);padding:14px">Sin rechazados.</td></tr></tbody></table>
               </div></div>
             </div>
           </div>
@@ -264,13 +264,13 @@
           <div>
             <div class="sec-lbl">Configuración del Disco</div>
             <div class="ig">
-              <div class="f"><label>Capacidad del Disco</label><input id="d-cap" type="number" value="1" min="1" placeholder="512"></div>
+              <div class="f"><label>Capacidad del Disco</label><input id="d-cap" type="number" value="15" min="1" placeholder="512"></div>
               <div class="f"><label>Unidad disco</label>
                 <select id="d-cap-u"><option value="MB">MB</option><option value="GB">GB</option></select>
               </div>
               <div class="f"><label>Tamaño de Bloque (KB)</label><input id="d-blk" type="number" value="100" min="1" placeholder="4"></div>
             </div>
-            <div style="font-size:10px;color:#5a5a5a;margin-top:6px">
+            <div style="font-size:10px;color:var(--app-text-muted);margin-top:6px">
               Para agregar archivos usa <b>📂 Cargar</b> (CSV: <code>nombre,tamaño,unidad</code>) o <b>↺ Ejemplo</b>, arriba junto a ▶ Simular.
             </div>
           </div>
@@ -278,15 +278,15 @@
 
           <!-- MAPA DEL DISCO — pieza central de la página -->
           <div class="alm-map-centerpiece">
-            <div class="sec-lbl" style="text-align:center">Mapa del Disco <span id="d-cap-info" style="color:#5a5a5a;font-weight:400;font-size:10px"></span></div>
+            <div class="sec-lbl" style="text-align:center">Mapa del Disco <span id="d-cap-info" style="color:var(--app-text-muted);font-weight:400;font-size:10px"></span></div>
             <div id="disco-wrap" class="disco-wrap disco-wrap-lg">
               <svg id="disco-overlay" class="disco-overlay" viewBox="0 0 480 120"></svg>
               <div id="disco-grid" class="disco-grid" style="grid-template-columns:repeat(16,1fr)">
-                <div class="blk libre" style="grid-column:1/-1;text-align:center;font-size:10px;color:#3a5a3a;padding:8px">Carga archivos con «📂 Cargar» o «↺ Ejemplo» (arriba) y presiona «▶ Simular»</div>
+                <div class="blk libre" style="grid-column:1/-1;text-align:center;font-size:10px;color:var(--app-libre-text);padding:8px">Carga archivos con «📂 Cargar» o «↺ Ejemplo» (arriba) y presiona «▶ Simular»</div>
               </div>
             </div>
             <div style="display:flex;gap:12px;margin-top:6px;font-size:10px;flex-wrap:wrap;justify-content:center">
-              <span style="color:#5a5a5a">■ <span style="color:#3a5a3a">Libre</span></span>
+              <span style="color:var(--app-text-muted)">■ <span style="color:var(--app-libre-text)">Libre</span></span>
               <span id="leyenda-alm"></span>
             </div>
             <!-- alm-extra-panel (Tabla FAT / Bitmap / Extensiones / Multinivel) se inyecta aquí abajo por JS -->
@@ -316,7 +316,7 @@
             <div class="ch open" onclick="togColl(this)"><span>📁 Archivos a Almacenar</span><span class="ca">▶</span></div>
             <div class="cb open"><div class="tw">
               <table><thead><tr><th>Nombre</th><th>Tamaño</th><th>Bloques Req.</th><th>Método</th></tr></thead>
-              <tbody id="tbl-arch"><tr><td colspan="4" style="text-align:center;color:#5a5a5a;padding:14px">Sin archivos.</td></tr></tbody></table>
+              <tbody id="tbl-arch"><tr><td colspan="4" style="text-align:center;color:var(--app-text-muted);padding:14px">Sin archivos.</td></tr></tbody></table>
             </div></div>
           </div>
           <div class="div"></div>
@@ -325,7 +325,7 @@
             <div class="ch open" onclick="togColl(this)"><span>📋 Tabla de Asignación de Bloques</span><span class="ca">▶</span></div>
             <div class="cb open"><div class="tw">
               <table><thead><tr><th>Archivo</th><th>Tam</th><th>Bloques Req.</th><th>Método</th><th>Bloques Asig.</th><th>Estado</th></tr></thead>
-              <tbody id="tbl-alm-res"><tr><td colspan="6" style="text-align:center;color:#5a5a5a;padding:14px">Sin simulación.</td></tr></tbody></table>
+              <tbody id="tbl-alm-res"><tr><td colspan="6" style="text-align:center;color:var(--app-text-muted);padding:14px">Sin simulación.</td></tr></tbody></table>
             </div></div>
           </div>
         </div>
@@ -345,7 +345,7 @@
           <div class="ir"><span class="k">Bloq. Índice</span><span class="v" id="a-bidx">—</span></div>
           <div class="div"></div>
           <div class="sec-lbl">Métodos usados</div>
-          <div id="a-metodos" style="font-size:11px;color:#7a7a7a">—</div>
+          <div id="a-metodos" style="font-size:11px;color:var(--app-text-muted)">—</div>
         </div>
       </div>
     </div>

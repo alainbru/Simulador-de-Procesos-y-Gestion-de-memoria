@@ -42,7 +42,7 @@ const ACOLS=['#1565c0','#2e7d32','#6a1b9a','#c62828','#e65100','#00695c','#4527a
              '#0097a7','#f57f17','#4e342e','#37474f','#6a4f4b'];
 
 function getColor(pid){
-  if(pid==='Idle')return 'rgba(255,255,255,.05)';
+  if(pid==='Idle')return 'rgba(128,128,128,.18)';
   if(!colorMap[pid]) colorMap[pid]=PAL[Object.keys(colorMap).length%PAL.length];
   return colorMap[pid];
 }
@@ -92,7 +92,7 @@ function cargarCSV(e){
       return;
     }
 
-    procesos=[];
+    procesos.length=0;
     rows.forEach(row=>{
       const id=row['proceso']||row['id']||row['p']||row['archivo']||row['nombre']||row['nom'];
       const arr=row['tiempollegada']||row['llegada']||row['arrival']||row['tllegada'];
@@ -124,7 +124,7 @@ function addProc(){
 function renderTblProc(rows){
   const data=rows||procesos.map(p=>({...p,inicio:'',fin:'',espera:'',retorno:''}));
   const tb=document.getElementById('tbl-proc');
-  if(!data.length){tb.innerHTML='<tr><td colspan="8" style="text-align:center;color:#5a5a5a;padding:14px">Sin procesos.</td></tr>';return;}
+  if(!data.length){tb.innerHTML='<tr><td colspan="8" style="text-align:center;color:var(--app-text-muted);padding:14px">Sin procesos.</td></tr>';return;}
   tb.innerHTML=data.sort((a,b)=>String(a.id)>String(b.id)?1:-1).map(r=>`
     <tr><td class="pid">${r.id}</td><td>${r.llegada}</td><td>${r.rafaga}</td><td>${r.tamano||'—'}</td>
     <td>${r.inicio}</td><td>${r.fin}</td>
@@ -235,14 +235,14 @@ function animGantt(g){
 
 function reiniciar(){
   clearTimeout(animId);
-  document.getElementById('g-canvas').innerHTML='<span style="color:#4a4a4a;font-size:11px">Esperando...</span>';
+  document.getElementById('g-canvas').innerHTML='<span style="color:var(--app-text-muted);font-size:11px">Esperando...</span>';
   document.getElementById('g-info').textContent='—';
   ['avg-e','avg-r','p-algo','d-tot','d-exp','d-modo'].forEach(id=>document.getElementById(id).textContent='—');
   renderTblProc();
 }
 function limpiarPlan(){
-  clearTimeout(animId); procesos=[]; colorMap={};
-  document.getElementById('g-canvas').innerHTML='<span style="color:#4a4a4a;font-size:11px">Esperando...</span>';
+  clearTimeout(animId); procesos.length=0; colorMap={};
+  document.getElementById('g-canvas').innerHTML='<span style="color:var(--app-text-muted);font-size:11px">Esperando...</span>';
   document.getElementById('g-info').textContent='—';
   document.getElementById('csv-inf').textContent='Sin archivo';
   ['avg-e','avg-r','p-algo','d-tot','d-q','d-exp','d-modo'].forEach(id=>document.getElementById(id).textContent='—');

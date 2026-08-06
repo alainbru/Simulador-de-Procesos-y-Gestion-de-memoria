@@ -100,16 +100,25 @@ function cargarArchivosCSV(event) {
       alert('El CSV no tiene filas válidas.\nFormato esperado por línea: nombre,tamaño,unidad (KB/MB/GB).\nEj: Docs,220,KB');
     } else {
       const met = getMetodoAlm();
+      const nuevos = [];
       rows.forEach(r => {
         if (archivos.some(a => a.nom === r.nom)) return; // evita nombres duplicados
         const tamKB = almKB(r.tam, r.u);
         const bloqReq = Math.ceil(tamKB / blkKB());
-        archivos.push({ nom: r.nom, tam: r.tam, u: r.u, tamKB, bloqReq, met });
+        const nuevo = { nom: r.nom, tam: r.tam, u: r.u, tamKB, bloqReq, met };
+        archivos.push(nuevo);
+        nuevos.push(nuevo);
       });
       window.archivos = archivos;
       renderTblArch();
       document.getElementById('a-narch').textContent = archivos.length;
       almRefreshBoundsAfterEdit();
+
+      // Si ya hay una simulación en curso, los archivos nuevos se insertan directo
+      // en el disco actual (respetando huecos), sin rehacer todo desde cero.
+      if (almTotB && almDisco.length) {
+        nuevos.forEach(n => almAgregarIncremental(n));
+      }
     }
     if (input) input.value = '';
   };
@@ -135,10 +144,10 @@ function cargarEjemploAlm() {
 
 function renderTblArch() {
   const tb = document.getElementById('tbl-arch');
-  if (!archivos.length) { tb.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#5a5a5a;padding:14px">Sin archivos.</td></tr>'; return; }
+  if (!archivos.length) { tb.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--app-text-muted);padding:14px">Sin archivos.</td></tr>'; return; }
   tb.innerHTML = archivos.map((a, i) => `
     <tr class="${i === almStep - 1 ? 'a2-row-new' : ''}"><td class="pid">${a.nom}</td><td>${a.tam} ${a.u}</td><td>${a.bloqReq}</td>
-    <td style="color:#4fc3f7;text-transform:capitalize">${a.met || '—'}</td></tr>`).join('');
+    <td style="color:var(--app-accent);text-transform:capitalize">${a.met || '—'}</td></tr>`).join('');
 }
 
 function almRefreshBoundsAfterEdit() {
@@ -290,20 +299,20 @@ function renderAlmState(disco, archColorMap, totB, bkKb, resul, noAsig, fragTota
   document.getElementById('d-cap-info').textContent = `(${totB} bloques de ${bkKb}KB)`;
 
   document.getElementById('leyenda-alm').innerHTML = Object.entries(archColorMap).map(([nom, col]) =>
-    `<span style="color:#aaa">■ <span style="color:${col}">${nom}</span></span>`).join(' ');
+    `<span style="color:var(--app-text-muted)">■ <span style="color:${col}">${nom}</span></span>`).join(' ');
 
   const metCount = {};
   archivosRef.forEach(a => { metCount[a.met || metodoSel] = (metCount[a.met || metodoSel] || 0) + 1; });
   document.getElementById('a-metodos').innerHTML = Object.entries(metCount).map(([m, n]) =>
-    `<div style="margin-bottom:3px"><span style="color:#4fc3f7;text-transform:capitalize">${m}</span>: ${n} archivo(s)</div>`).join('');
+    `<div style="margin-bottom:3px"><span style="color:var(--app-accent);text-transform:capitalize">${m}</span>: ${n} archivo(s)</div>`).join('');
 
   const allRes = [...resul, ...noAsig.map(a => ({ ...a, bloqAsig: [], estado: 'Rechazado' }))];
   document.getElementById('tbl-alm-res').innerHTML = allRes.length ? allRes.map(a => `
     <tr><td class="pid">${a.nom}</td><td>${a.tamKB} KB</td><td>${a.bloqReq}</td>
-    <td style="color:#4fc3f7;text-transform:capitalize">${a.met || '—'}</td>
+    <td style="color:var(--app-accent);text-transform:capitalize">${a.met || '—'}</td>
     <td>${a.bloqAsig && a.bloqAsig.length ? a.bloqAsig.join(', ') : '—'}</td>
     <td style="color:${a.estado === 'Asignado' ? '#4caf50' : '#f44336'}">${a.estado}</td></tr>`).join('')
-    : '<tr><td colspan="6" style="text-align:center;color:#5a5a5a;padding:14px">Sin simulación.</td></tr>';
+    : '<tr><td colspan="6" style="text-align:center;color:var(--app-text-muted);padding:14px">Sin simulación.</td></tr>';
 
   const simTitle = document.getElementById('alm-sim-title');
   const simMethod = document.getElementById('alm-sim-method');
@@ -446,10 +455,63 @@ function renderMetodoExtra(metodoSel, disco, procesados, archColorMap, lastArch)
     panel.innerHTML = `<div class="a2-panel"><div class="a2-panel-title">📎 Tabla FAT (Bloque → Siguiente)</div>
       <div class="a2-fat-wrap">${nombres.map(f => {
         const chain = disco.filter(b => !b.libre && b.archivo === f).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-        const rows = chain.map(b => `<tr class="${lastArch && f === lastArch.nom ? 'a2-row-new' : ''}"><td>${b.id}</td><td>${b.next != null ? disco[b.next].id : 'EOF'}</td></tr>`).join('');
-        return `<div class="a2-fat-file"><div class="a2-fat-file-name" style="color:${archColorMap[f]}">${f}</div>
+        const rows = chain.map(b => `<tr class="${lastArch && f === lastArch.nom ? 'a2-row-new' : ''}" data-hl-archivo="${escAttr(f)}" onmouseenter="almHoverArchivo('${escAttr(f)}',true)" onmouseleave="almHoverArchivo('${escAttr(f)}',false)"><td>${b.id}</td><td>${b.next != null ? disco[b.next].id : 'EOF'}</td></tr>`).join('');
+        return `<div class="a2-fat-file" data-hl-archivo="${escAttr(f)}" onmouseenter="almHoverArchivo('${escAttr(f)}',true)" onmouseleave="almHoverArchivo('${escAttr(f)}',false)"><div class="a2-fat-file-name" style="color:${archColorMap[f]}">${f} <span style="color:var(--app-text-muted);font-weight:400">— dirección inicial: B${chain[0].id}</span></div>
           <table class="a2-table"><thead><tr><th>Bloque</th><th>Siguiente</th></tr></thead><tbody>${rows}</tbody></table></div>`;
       }).join('')}</div></div>`;
+    return;
+  }
+
+  if (metodoSel === 'enlazada') {
+    const nombres = [...new Set(disco.filter(b => !b.libre && b.archivo).map(b => b.archivo))];
+    if (!nombres.length) { panel.style.display = 'none'; panel.innerHTML = ''; return; }
+    panel.style.display = 'block';
+    panel.innerHTML = `<div class="a2-panel"><div class="a2-panel-title">🔗 Directorio Enlazado (Dirección inicial → Cadena de bloques)</div>
+      <div class="a2-fat-wrap">${nombres.map(f => {
+        const chain = disco.filter(b => !b.libre && b.archivo === f).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+        const rows = chain.map((b, k) => {
+          const nextB = chain[k + 1];
+          return `<tr class="${lastArch && f === lastArch.nom ? 'a2-row-new' : ''}" data-hl-archivo="${escAttr(f)}" onmouseenter="almHoverArchivo('${escAttr(f)}',true)" onmouseleave="almHoverArchivo('${escAttr(f)}',false)"><td>${b.id}</td><td>${nextB ? nextB.id : 'NULL'}</td></tr>`;
+        }).join('');
+        return `<div class="a2-fat-file" data-hl-archivo="${escAttr(f)}" onmouseenter="almHoverArchivo('${escAttr(f)}',true)" onmouseleave="almHoverArchivo('${escAttr(f)}',false)">
+          <div class="a2-fat-file-name" style="color:${archColorMap[f]}">${f} <span style="color:var(--app-text-muted);font-weight:400">— dirección inicial: B${chain[0].id}</span></div>
+          <table class="a2-table"><thead><tr><th>Bloque</th><th>Apunta a</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+      }).join('')}</div></div>`;
+    return;
+  }
+
+  if (metodoSel === 'indexada') {
+    const nombres = [...new Set(disco.filter(b => !b.libre && b.archivo).map(b => b.archivo))];
+    if (!nombres.length) { panel.style.display = 'none'; panel.innerHTML = ''; return; }
+    panel.style.display = 'block';
+    panel.innerHTML = `<div class="a2-panel"><div class="a2-panel-title">📇 Bloque de Índice (Dirección → Punteros a datos)</div>
+      <div class="a2-fat-wrap">${nombres.map(f => {
+        const blocks = disco.filter(b => !b.libre && b.archivo === f);
+        const idxB = blocks.find(b => b.tipo === 'indice');
+        if (!idxB) return '';
+        const datos = blocks.filter(b => b.tipo !== 'indice').sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+        const rows = datos.map((b, k) => `<tr class="${lastArch && f === lastArch.nom ? 'a2-row-new' : ''}" data-hl-archivo="${escAttr(f)}" onmouseenter="almHoverArchivo('${escAttr(f)}',true)" onmouseleave="almHoverArchivo('${escAttr(f)}',false)"><td>Puntero ${k}</td><td>B${b.id}</td></tr>`).join('');
+        return `<div class="a2-fat-file" data-hl-archivo="${escAttr(f)}" onmouseenter="almHoverArchivo('${escAttr(f)}',true)" onmouseleave="almHoverArchivo('${escAttr(f)}',false)">
+          <div class="a2-fat-file-name" style="color:${archColorMap[f]}">${f} <span style="color:var(--app-text-muted);font-weight:400">— bloque índice: B${idxB.id}</span></div>
+          <table class="a2-table"><thead><tr><th>Entrada</th><th>Bloque</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+      }).join('')}</div></div>`;
+    return;
+  }
+
+  if (metodoSel === 'contigua') {
+    const occ = disco.map((b, i) => ({ ...b, index: i })).filter(b => !b.libre && b.archivo);
+    const nombres = [...new Set(occ.map(b => b.archivo))];
+    if (!nombres.length) { panel.style.display = 'none'; panel.innerHTML = ''; return; }
+    panel.style.display = 'block';
+    const rows = nombres.map(f => {
+      const blocks = occ.filter(b => b.archivo === f).sort((a, b) => a.index - b.index);
+      const ini = blocks[0].index, fin = blocks[blocks.length - 1].index;
+      return `<tr class="${lastArch && f === lastArch.nom ? 'a2-row-new' : ''}" data-hl-archivo="${escAttr(f)}" onmouseenter="almHoverArchivo('${escAttr(f)}',true)" onmouseleave="almHoverArchivo('${escAttr(f)}',false)">
+        <td style="color:${archColorMap[f]}">${f}</td><td>B${ini}</td><td>B${fin}</td><td>${blocks.length}</td></tr>`;
+    }).join('');
+    panel.innerHTML = `<div class="a2-panel"><div class="a2-panel-title">📍 Tabla de Direcciones (Contigua)</div>
+      <table class="a2-table"><thead><tr><th>Archivo</th><th>Bloque inicio</th><th>Bloque fin</th><th>Bloques</th></tr></thead>
+      <tbody>${rows}</tbody></table></div>`;
     return;
   }
 
@@ -713,6 +775,7 @@ function agregarEspacioAlArchivo(arch, bloquesExtra) {
   const prefStart = current[current.length - 1] + 1;
   let asignados = [];
 
+  // ── Contigua / Bitmap / Extensión: necesitan una corrida contigua de bloques libres.
   if (metodoSel === 'contigua' || metodoSel === 'bitmap' || metodoSel === 'extension') {
     const start = encontrarCorridaLibre(bloquesExtra, prefStart);
     if (start >= 0) {
@@ -722,22 +785,82 @@ function agregarEspacioAlArchivo(arch, bloquesExtra) {
         }
       }
     }
+    return asignados;
+  }
+
+  // ── Resto de métodos: los bloques nuevos no necesitan ser contiguos, se toman
+  // los huecos libres que haya en cualquier parte del disco (busca hasta encontrar).
+  const libresIdx = [];
+  for (let i = 0; i < almDisco.length && libresIdx.length < bloquesExtra; i++) {
+    if (almDisco[i].libre) libresIdx.push(i);
+  }
+  if (!libresIdx.length) return [];
+
+  if (metodoSel === 'enlazada') {
+    libresIdx.forEach((idx, k) => {
+      const tipo = (k === libresIdx.length - 1) ? 'enlazada-fin' : 'enlazada';
+      if (marcarBloqueAsignado(idx, arch.nom, metodoSel, current.length + k, tipo)) asignados.push(idx);
+    });
+    // El bloque que antes era el final de la cadena ahora apunta al nuevo tramo agregado.
+    const prevLastB = almDisco[current[current.length - 1]];
+    if (prevLastB) prevLastB.tipo = 'enlazada';
+
+  } else if (metodoSel === 'fat') {
+    libresIdx.forEach((idx, k) => {
+      const tipo = (k === libresIdx.length - 1) ? 'fat-fin' : 'fat';
+      if (marcarBloqueAsignado(idx, arch.nom, metodoSel, current.length + k, tipo)) {
+        almDisco[idx].next = (k === libresIdx.length - 1) ? null : libresIdx[k + 1];
+        asignados.push(idx);
+      }
+    });
+    // Reencadena la tabla FAT: el antiguo último bloque ahora apunta al primer bloque nuevo.
+    const prevLastIdx = current[current.length - 1];
+    const prevLastB = almDisco[prevLastIdx];
+    if (prevLastB) { prevLastB.tipo = 'fat'; prevLastB.next = libresIdx[0]; }
+
+  } else if (metodoSel === 'indexada') {
+    // El bloque índice ya existe (order 0); solo se agregan más punteros/bloques de datos.
+    libresIdx.forEach((idx, k) => {
+      if (marcarBloqueAsignado(idx, arch.nom, metodoSel, current.length + k, 'indexada')) asignados.push(idx);
+    });
+
   } else {
-    for (let i = prefStart; i < almDisco.length && asignados.length < bloquesExtra; i++) {
-      if (marcarBloqueAsignado(i, arch.nom, metodoSel, current.length + asignados.length, 'data')) {
-        asignados.push(i);
-      }
-    }
-    if (asignados.length < bloquesExtra) {
-      for (let i = 0; i < almDisco.length && asignados.length < bloquesExtra; i++) {
-        if (marcarBloqueAsignado(i, arch.nom, metodoSel, current.length + asignados.length, 'data')) {
-          asignados.push(i);
-        }
-      }
-    }
+    // Fallback genérico (p.ej. multinivel): coloca donde haya espacio libre.
+    libresIdx.forEach((idx, k) => {
+      if (marcarBloqueAsignado(idx, arch.nom, metodoSel, current.length + k, 'data')) asignados.push(idx);
+    });
   }
 
   return asignados;
+}
+
+// ─── Inserta UN archivo nuevo directamente sobre el estado actual del disco,
+// sin rehacer toda la simulación: así se respetan los huecos que hayan quedado
+// de archivos eliminados y se reutilizan si hay espacio suficiente (si no,
+// asignarArchivo sigue buscando por todo el disco hasta encontrar dónde entra). ───
+function almAgregarIncremental(arch) {
+  if (!almDisco || !almDisco.length) return null;
+  const met = arch.met || almMetodo || getMetodoAlm();
+  const result = asignarArchivo(almDisco, arch, met, almBkKb);
+  if (result.ok) {
+    almResul.push({ ...arch, bloqAsig: result.asignados, estado: 'Asignado' });
+    almFragTotal += result.fragDelta || 0;
+    almIdxBlocks += result.idxBlockCount || (result.idxBlock ? 1 : 0);
+  } else {
+    almNoAsig.push({ ...arch, motivo: result.motivo || 'Espacio insuficiente' });
+  }
+  almStep = archivos.length;
+  const stepInfo = {
+    title: result.ok ? `Asignando ${arch.nom}` : `${arch.nom} rechazado`,
+    description: result.ok
+      ? `${arch.nom} ocupa ${arch.bloqReq} bloque(s) usando ${getMetodoLabel(met).toLowerCase()}, reutilizando huecos libres del disco cuando alcanzan.`
+      : `${arch.nom} no pudo asignarse: ${result.motivo || 'espacio insuficiente'}.`,
+    step: `Paso ${archivos.length}/${archivos.length}`
+  };
+  renderAlmState(almDisco, almColorMap, almTotB, almBkKb, almResul, almNoAsig, almFragTotal, almIdxBlocks, archivos, almMetodo, stepInfo);
+  renderMetodoExtra(almMetodo, almDisco, archivos, almColorMap, arch);
+  almUpdateControls();
+  return result;
 }
 
 // ─── Vuelve a simular todo el estado actual de `archivos` sin animación ───
@@ -768,7 +891,7 @@ function limpiarAlm() {
   archivos = []; window.archivos = archivos;
   almDisco = []; almResul = []; almNoAsig = []; almFragTotal = 0; almIdxBlocks = 0; almColorMap = {}; almStep = 0;
   almSelectedBlock = null;
-  document.getElementById('disco-grid').innerHTML = '<div class="blk libre" style="grid-column:1/-1;text-align:center;font-size:10px;color:#3a5a3a;padding:8px">Carga archivos con «📂 Cargar» o «↺ Ejemplo» (arriba) y presiona «▶ Simular»</div>';
+  document.getElementById('disco-grid').innerHTML = '<div class="blk libre" style="grid-column:1/-1;text-align:center;font-size:10px;color:var(--app-libre-text);padding:8px">Carga archivos con «📂 Cargar» o «↺ Ejemplo» (arriba) y presiona «▶ Simular»</div>';
   const overlay = document.getElementById('disco-overlay'); if (overlay) overlay.innerHTML = '';
   document.getElementById('leyenda-alm').innerHTML = '';
   document.getElementById('d-cap-info').textContent = '';
@@ -778,8 +901,8 @@ function limpiarAlm() {
   document.getElementById('alm-sim-title').textContent = 'Selecciona un método';
   document.getElementById('alm-sim-method').textContent = '—';
   document.getElementById('alm-sim-body').textContent = 'El mapa del disco mostrará cómo se asignan los bloques según el método que elijas.';
-  document.getElementById('tbl-arch').innerHTML = '<tr><td colspan="4" style="text-align:center;color:#5a5a5a;padding:14px">Sin archivos.</td></tr>';
-  document.getElementById('tbl-alm-res').innerHTML = '<tr><td colspan="6" style="text-align:center;color:#5a5a5a;padding:14px">Sin simulación.</td></tr>';
+  document.getElementById('tbl-arch').innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--app-text-muted);padding:14px">Sin archivos.</td></tr>';
+  document.getElementById('tbl-alm-res').innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--app-text-muted);padding:14px">Sin simulación.</td></tr>';
   const panel = document.getElementById('alm-extra-panel'); if (panel) { panel.innerHTML = ''; panel.style.display = 'none'; }
   const nomEl = document.getElementById('af-nom'); if (nomEl) nomEl.value = '';
   const tamEl = document.getElementById('af-tam'); if (tamEl) tamEl.value = '';
@@ -817,81 +940,119 @@ function agregarArchivoManual() {
   document.getElementById('a-narch').textContent = archivos.length;
   almRefreshBoundsAfterEdit();
 
-  // Si ya había una simulación corriendo, la actualizamos al instante.
-  if (almTotB) almResimular();
+  // Si ya había una simulación corriendo, el archivo nuevo se inserta directo sobre
+  // el disco actual (aprovecha huecos de archivos eliminados; si no caben, sigue
+  // buscando por todo el disco), en vez de rehacer toda la simulación desde cero.
+  if (almTotB && almDisco.length) {
+    almAgregarIncremental(archivos[archivos.length - 1]);
+  }
 }
 
-// ─── Ampliar (aumentar) el tamaño de un archivo existente ───
+// ─── Ampliar (aumentar) el tamaño de un archivo existente: el archivo a ampliar
+// se toma directamente del bloque seleccionado en el mapa (clic), y el campo de
+// tamaño es SOLO la cantidad a agregar sobre lo que el archivo ya tiene. ───
 function ampliarArchivo() {
-  const sel = document.getElementById('af-ampliar-sel');
-  const tamEl = document.getElementById('af-ampliar-tam');
-  const uEl = document.getElementById('af-ampliar-u');
-  if (!sel || !tamEl || !uEl) return;
-  const nom = sel.value;
-  if (!nom) { alert('Selecciona un archivo para ampliar.'); return; }
+  if (almSelectedBlock == null || !almDisco[almSelectedBlock] || almDisco[almSelectedBlock].libre) {
+    alert('Haz clic en un bloque ocupado del mapa para elegir qué archivo ampliar.');
+    return;
+  }
+  const nom = almDisco[almSelectedBlock].archivo;
   const arch = archivos.find(a => a.nom === nom);
   if (!arch) return;
 
+  const tamEl = document.getElementById('af-ampliar-tam');
+  const uEl = document.getElementById('af-ampliar-u');
+  if (!tamEl || !uEl) return;
   const tam = parseFloat(tamEl.value);
   const u = uEl.value;
-  if (isNaN(tam) || tam <= 0) { alert('Ingresa un tamaño válido.'); return; }
-  const nuevoTamKB = almKB(tam, u);
-  if (nuevoTamKB <= arch.tamKB) { alert(`El nuevo tamaño debe ser mayor al actual (${arch.tam} ${arch.u}).`); return; }
+  if (isNaN(tam) || tam <= 0) { alert('Ingresa cuánto quieres agregar (mayor a 0).'); return; }
 
+  const extraKB = almKB(tam, u);
+  const nuevoTamKB = arch.tamKB + extraKB;
   const bloquesActuales = getBloquesArchivo(arch.nom).length;
   const nuevoBloqReq = Math.ceil(nuevoTamKB / blkKB());
   const bloquesExtra = Math.max(0, nuevoBloqReq - bloquesActuales);
 
-  arch.tam = tam; arch.u = u; arch.tamKB = nuevoTamKB;
+  if (almTotB && almDisco.length && bloquesExtra > 0) {
+    const agregados = agregarEspacioAlArchivo(arch, bloquesExtra);
+    if (!agregados.length) {
+      alert(`No hay espacio libre suficiente para agregar ${tam} ${u} a "${arch.nom}".`);
+      return;
+    }
+  }
+
+  // Confirmado el espacio (o no hacía falta ninguno extra): recién ahora se
+  // actualiza el tamaño del archivo.
+  arch.tamKB = nuevoTamKB;
+  arch.tam = u === 'MB' ? nuevoTamKB / 1024 : u === 'GB' ? nuevoTamKB / (1024 * 1024) : nuevoTamKB;
+  arch.u = u;
   arch.bloqReq = nuevoBloqReq;
 
   tamEl.value = '';
   renderTblArch();
 
   if (almTotB && almDisco.length) {
-    if (bloquesExtra > 0) {
-      const agregados = agregarEspacioAlArchivo(arch, bloquesExtra);
-      if (!agregados.length) {
-        alert(`No hay espacio libre suficiente para ampliar "${arch.nom}" sobre su área actual.`);
-        return;
-      }
-    }
     syncEstadoAlmDesdeDisco();
     const stepInfo = {
       title: `Ampliando ${arch.nom}`,
-      description: `Se agregaron ${bloquesExtra} bloque(s) adicionales sobre el espacio ya ocupado por ${arch.nom}.`,
+      description: `Se agregaron ${bloquesExtra} bloque(s) (${tam} ${u}) sobre el espacio ya ocupado por ${arch.nom}.`,
       step: `Paso ${archivos.length}/${archivos.length}`
     };
     renderAlmState(almDisco, almColorMap, almTotB, almBkKb, almResul, almNoAsig, almFragTotal, almIdxBlocks, archivos, almMetodo, stepInfo);
     renderMetodoExtra(almMetodo, almDisco, archivos, almColorMap, arch);
   } else {
     almRefreshBoundsAfterEdit();
-    alert(`"${arch.nom}" ahora pesa ${arch.tam} ${arch.u}. Presiona ▶ Simular para asignar los bloques.`);
+    alert(`"${arch.nom}" ahora pesa ${arch.tam.toFixed(2)} ${arch.u}. Presiona ▶ Simular para asignar los bloques.`);
   }
 }
 
-// ─── Selector de "ampliar archivo": mantiene la lista de nombres actualizada ───
-function refreshAmpliarSelect() {
-  const sel = document.getElementById('af-ampliar-sel');
-  if (!sel) return;
-  const prev = sel.value;
-  sel.innerHTML = archivos.length
-    ? archivos.map(a => `<option value="${escAttr(a.nom)}">${a.nom} (${a.tam} ${a.u})</option>`).join('')
-    : '<option value="">Sin archivos</option>';
-  if (archivos.some(a => a.nom === prev)) sel.value = prev;
+// ─── Mantiene sincronizado el panel "Ampliar Archivo" con el bloque seleccionado
+// en el mapa del disco: no hay combobox, el archivo a ampliar es el dueño del
+// bloque que se haya clickeado. ───
+function almSyncAmpliarTarget() {
+  const info = document.getElementById('af-ampliar-target');
+  const btn = document.getElementById('btn-ampliar-archivo');
+  if (!info) return;
+  if (almSelectedBlock == null || !almDisco[almSelectedBlock] || almDisco[almSelectedBlock].libre) {
+    info.textContent = 'Selecciona un bloque ocupado en el mapa.';
+    if (btn) btn.disabled = true;
+    return;
+  }
+  const b = almDisco[almSelectedBlock];
+  const arch = archivos.find(a => a.nom === b.archivo);
+  const col = almColorMap[b.archivo] || '#fff';
+  info.innerHTML = `Archivo: <b style="color:${col}">${b.archivo}</b>${arch ? ` <span style="color:var(--app-text-muted)">(actual: ${arch.tam} ${arch.u})</span>` : ''}`;
+  if (btn) btn.disabled = false;
 }
 
-// ─── Resaltado al pasar el mouse: todos los bloques del mismo archivo + su línea ───
-function almHoverBlock(i, entering) {
-  const b = almDisco[i];
-  if (!b || b.libre) return;
-  const archivo = b.archivo;
+// ─── Alias retro-compatible: antes refrescaba un <select>, ahora sincroniza el
+// panel de "Ampliar Archivo" con el bloque seleccionado. ───
+function refreshAmpliarSelect() {
+  almSyncAmpliarTarget();
+}
+
+// ─── Resaltado por nombre de archivo: todos sus bloques en el mapa + sus líneas/flechas
+// en el overlay, y las filas correspondientes en las tablas de direcciones (FAT,
+// enlazada, indexada, contigua). Se usa tanto al pasar el mouse por un bloque del
+// disco como al pasar el mouse por una fila/dirección de las tablas. ───
+function almHoverArchivo(archivo, entering) {
+  if (!archivo) return;
   document.querySelectorAll('#disco-grid .blk').forEach(el => {
     if (el.dataset.archivo === archivo) el.classList.toggle('a2-hover', entering);
   });
   document.querySelectorAll('#disco-overlay [data-archivo]').forEach(el => {
     if (el.getAttribute('data-archivo') === archivo) el.classList.toggle('a2-line-hot', entering);
   });
+  document.querySelectorAll(`[data-hl-archivo="${CSS && CSS.escape ? CSS.escape(archivo) : archivo}"]`).forEach(el => {
+    el.classList.toggle('a2-hover-row', entering);
+  });
+}
+
+// ─── Resaltado al pasar el mouse sobre un bloque del disco ───
+function almHoverBlock(i, entering) {
+  const b = almDisco[i];
+  if (!b || b.libre) return;
+  almHoverArchivo(b.archivo, entering);
 }
 
 // ─── Selección de bloque (click) ───
@@ -909,21 +1070,23 @@ function almSelectBlock(i) {
 function almUpdateBlockInfo() {
   const info = document.getElementById('blk-sel-info');
   const delBtn = document.getElementById('btn-del-blk-archivo');
-  if (!info) return;
-  if (almSelectedBlock == null || !almDisco[almSelectedBlock]) {
-    info.textContent = 'Haz clic en un bloque del mapa.';
-    if (delBtn) delBtn.disabled = true;
-    return;
+  if (info) {
+    if (almSelectedBlock == null || !almDisco[almSelectedBlock]) {
+      info.textContent = 'Haz clic en un bloque del mapa.';
+      if (delBtn) delBtn.disabled = true;
+    } else {
+      const b = almDisco[almSelectedBlock];
+      if (b.libre) {
+        info.innerHTML = `Bloque <b>${b.id}</b>: <span style="color:var(--app-libre-text)">Libre</span>`;
+        if (delBtn) delBtn.disabled = true;
+      } else {
+        const col = almColorMap[b.archivo] || '#fff';
+        info.innerHTML = `Bloque <b>${b.id}</b> pertenece a<br><b style="color:${col}">${b.archivo}</b> <span style="color:var(--app-text-muted)">(${b.tipo || '—'})</span>`;
+        if (delBtn) delBtn.disabled = false;
+      }
+    }
   }
-  const b = almDisco[almSelectedBlock];
-  if (b.libre) {
-    info.innerHTML = `Bloque <b>${b.id}</b>: <span style="color:#3a5a3a">Libre</span>`;
-    if (delBtn) delBtn.disabled = true;
-  } else {
-    const col = almColorMap[b.archivo] || '#fff';
-    info.innerHTML = `Bloque <b>${b.id}</b> pertenece a<br><b style="color:${col}">${b.archivo}</b> <span style="color:#7a7a7a">(${b.tipo || '—'})</span>`;
-    if (delBtn) delBtn.disabled = false;
-  }
+  almSyncAmpliarTarget();
 }
 
 // ─── Elimina del disco el archivo dueño del bloque seleccionado ───
@@ -937,6 +1100,7 @@ function eliminarArchivoSeleccionado() {
   window.archivos = archivos;
   delete almColorMap[nombre];
   almSelectedBlock = null;
+  almStep = archivos.length;
 
   syncEstadoAlmDesdeDisco();
   const stepInfo = {
@@ -1003,15 +1167,15 @@ function ensureAlmDOM() {
           <button class="btn red" id="btn-del-blk-archivo" style="width:100%;margin-top:6px" disabled onclick="eliminarArchivoSeleccionado()">🗑 Eliminar archivo</button>
           <div class="div"></div>
           <div class="sec-lbl">⤢ Ampliar Archivo</div>
-          <select id="af-ampliar-sel"><option value="">Sin archivos</option></select>
+          <div id="af-ampliar-target" class="a2-blk-info" style="margin-bottom:6px">Selecciona un bloque ocupado en el mapa.</div>
           <div class="a2-add-row">
-            <input id="af-ampliar-tam" type="number" min="1" placeholder="Nuevo tamaño total">
+            <input id="af-ampliar-tam" type="number" min="1" placeholder="Cantidad a agregar">
             <select id="af-ampliar-u"><option value="KB">KB</option><option value="MB">MB</option><option value="GB">GB</option></select>
           </div>
-          <button class="btn orange" style="width:100%;margin-top:6px" onclick="ampliarArchivo()">⤢ Ampliar archivo</button>
+          <button class="btn orange" id="btn-ampliar-archivo" style="width:100%;margin-top:6px" disabled onclick="ampliarArchivo()">⤢ Ampliar archivo</button>
           <div class="div"></div>
         </div>`);
-      refreshAmpliarSelect();
+      almSyncAmpliarTarget();
     }
   }
 }
@@ -1024,55 +1188,59 @@ function injectAlmStyles() {
   .a2-controls .btn{padding:2px 7px;font-size:11px;line-height:1.6}
   .a2-controls .btn:disabled{opacity:.35;cursor:not-allowed}
   .a2-speed-wrap{display:flex;align-items:center;gap:4px}
-  .a2-speed-wrap input[type=range]{width:60px;accent-color:#ffb36b;height:3px;cursor:pointer}
+  .a2-speed-wrap input[type=range]{width:60px;accent-color:var(--app-accent-2);height:3px;cursor:pointer}
   .a2-speed-ico{font-size:10px;opacity:.8}
   .a2-progress-wrap{display:flex;align-items:center;gap:6px;flex:1;min-width:110px}
-  .a2-progress-wrap input[type=range]{flex:1;accent-color:#4fc3f7;height:3px;cursor:pointer}
-  .a2-progress-lbl{font-size:10px;color:#8a8a8a;white-space:nowrap}
+  .a2-progress-wrap input[type=range]{flex:1;accent-color:var(--app-accent);height:3px;cursor:pointer}
+  .a2-progress-lbl{font-size:10px;color:var(--app-text-muted);white-space:nowrap}
 
   .a2-extra{margin:10px 0;animation:a2-fadein .25s ease}
   @keyframes a2-fadein{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
   .a2-panel{background:var(--app-surface);border:1px solid var(--app-border);border-radius:6px;padding:10px 12px}
-  .a2-panel-title{font-size:12px;color:#4fc3f7;font-weight:600;margin-bottom:8px}
+  .a2-panel-title{font-size:12px;color:var(--app-accent);font-weight:600;margin-bottom:8px}
 
   .a2-table{width:100%;border-collapse:collapse;font-size:11px;margin-top:4px}
   .a2-table th{text-align:left;color:var(--app-text-muted);font-weight:500;padding:3px 6px;border-bottom:1px solid var(--app-border)}
   .a2-table td{padding:3px 6px;color:var(--app-text);border-bottom:1px solid var(--app-border)}
-  .a2-row-new{background:#22304a;animation:a2-pulse-bg 1s ease}
-  @keyframes a2-pulse-bg{0%{background:#2b4a6e}100%{background:#22304a}}
+  .a2-row-new{background:var(--app-row-new-bg);animation:a2-pulse-bg 1s ease}
+  @keyframes a2-pulse-bg{0%{background:var(--app-row-new-bg2)}100%{background:var(--app-row-new-bg)}}
 
   .a2-fat-wrap{display:flex;flex-wrap:wrap;gap:14px}
-  .a2-fat-file{min-width:130px}
+  .a2-fat-file{min-width:130px;border-radius:4px;transition:background .12s ease}
   .a2-fat-file-name{font-size:11px;font-weight:600;margin-bottom:2px}
+  .a2-table tr{cursor:default;transition:background .12s ease}
+  .a2-table tr[data-hl-archivo]{cursor:pointer}
+  .a2-hover-row{background:rgba(79,195,247,.18)!important}
+  div.a2-fat-file.a2-hover-row{background:rgba(79,195,247,.1)}
 
   .a2-bitmap-grid{display:grid;grid-template-columns:repeat(32,1fr);gap:2px;margin-top:4px}
   .a2-bit{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:9px;border-radius:2px;color:#0a0a0a;font-weight:700}
-  .a2-bit-0{background:#1a2a1a;color:#3a5a3a}
+  .a2-bit-0{background:var(--app-libre-bg);color:var(--app-libre-text)}
   .a2-bit-1{background:#c8b36d;color:#332b10}
   .a2-bit-new{outline:2px solid #4fc3f7;animation:a2-pulse 1s ease-out 2}
   @keyframes a2-pulse{0%{box-shadow:0 0 0 0 rgba(79,195,247,.7)}70%{box-shadow:0 0 0 6px rgba(79,195,247,0)}100%{box-shadow:0 0 0 0 rgba(79,195,247,0)}}
-  .a2-bitmap-string{margin-top:8px;font-family:monospace;font-size:11px;color:#8a8a8a;letter-spacing:2px;word-break:break-all}
+  .a2-bitmap-string{margin-top:8px;font-family:monospace;font-size:11px;color:var(--app-text-muted);letter-spacing:2px;word-break:break-all}
 
   .a2-tree-file{margin-bottom:14px;padding:8px;border-radius:6px}
   .a2-tree-file:last-child{margin-bottom:0}
   .a2-tree-filename{font-size:11px;font-weight:600;margin-bottom:6px}
   .a2-tree{display:flex;flex-direction:column;gap:4px}
   .a2-tree-node{padding:4px 8px;border-radius:4px;font-size:11px;width:fit-content}
-  .a2-tree-root{background:#20304a;color:#4fc3f7;border:1px solid #4fc3f7}
-  .a2-tree-mid{background:#241f38;color:#a99bff;border:1px solid #7c6cff}
-  .a2-tree-leaf{background:#182a18;color:#7fcf7f;border:1px solid #345c34;display:inline-block}
-  .a2-tree-children{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 4px 18px;padding-left:8px;border-left:2px dashed #333a55}
+  .a2-tree-root{background:var(--app-node-root-bg);color:var(--app-accent);border:1px solid var(--app-accent)}
+  .a2-tree-mid{background:var(--app-node-mid-bg);color:var(--app-node-mid-text);border:1px solid var(--app-node-mid-border)}
+  .a2-tree-leaf{background:var(--app-node-leaf-bg);color:var(--app-node-leaf-text);border:1px solid var(--app-node-leaf-border);display:inline-block}
+  .a2-tree-children{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 4px 18px;padding-left:8px;border-left:2px dashed var(--app-border)}
 
   /* ─── Gestor de archivos (panel derecho) ─── */
   #alm-file-manager{margin-bottom:4px}
   #alm-file-manager .a2-blk-info{background:var(--app-surface-2);border-color:var(--app-border);color:var(--app-text)}
   .a2-add-file input, .a2-add-file select,
-  #af-ampliar-sel, .a2-add-row input, .a2-add-row select{
-    width:100%;box-sizing:border-box;background:#2a2a2a;border:1px solid #3a3a3a;border-radius:3px;
-    color:#e0e0e0;font-size:12px;padding:5px 7px;outline:none;margin-bottom:6px;
+  #af-ampliar-target, .a2-add-row input, .a2-add-row select{
+    width:100%;box-sizing:border-box;background:var(--app-input);border:1px solid var(--app-input-border);border-radius:3px;
+    color:var(--app-text-strong);font-size:12px;padding:5px 7px;outline:none;margin-bottom:6px;
   }
   .a2-add-file input:focus, .a2-add-file select:focus,
-  #af-ampliar-sel:focus, .a2-add-row input:focus, .a2-add-row select:focus{border-color:#4fc3f7}
+  .a2-add-row input:focus, .a2-add-row select:focus{border-color:var(--app-accent)}
   .a2-add-row{display:flex;gap:6px}
   .a2-add-row input{flex:2}
   .a2-add-row select{flex:1}
@@ -1080,7 +1248,7 @@ function injectAlmStyles() {
 
   /* ─── Resaltado de bloques al pasar el mouse / seleccionar ─── */
   #disco-grid .blk{cursor:pointer;transition:transform .12s ease,box-shadow .12s ease}
-  #disco-grid .blk.a2-hover{outline:2px solid #fff;box-shadow:0 0 8px rgba(255,255,255,.65);transform:scale(1.08);position:relative;z-index:5}
+  #disco-grid .blk.a2-hover{outline:2px solid var(--app-text-strong);box-shadow:0 0 8px rgba(0,0,0,.25);transform:scale(1.08);position:relative;z-index:5}
   #disco-grid .blk.a2-selected{outline:3px solid #4fc3f7!important;box-shadow:0 0 0 3px rgba(79,195,247,.35);position:relative;z-index:6}
   .a2-oline{transition:stroke-width .12s ease,filter .12s ease}
   .a2-line-hot{stroke-width:6!important;filter:drop-shadow(0 0 4px rgba(255,255,255,.85))}
@@ -1138,7 +1306,10 @@ window.almStepTogglePlay = almStepTogglePlay;
 window.agregarArchivoManual = agregarArchivoManual;
 window.ampliarArchivo = ampliarArchivo;
 window.refreshAmpliarSelect = refreshAmpliarSelect;
+window.almSyncAmpliarTarget = almSyncAmpliarTarget;
 window.almHoverBlock = almHoverBlock;
+window.almHoverArchivo = almHoverArchivo;
+window.almAgregarIncremental = almAgregarIncremental;
 window.almSelectBlock = almSelectBlock;
 window.almUpdateBlockInfo = almUpdateBlockInfo;
 window.eliminarArchivoSeleccionado = eliminarArchivoSeleccionado;

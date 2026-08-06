@@ -2,7 +2,7 @@
 let particiones=[];
 let memTecnica='multinivel', memColorMap={};
 window.procesos=window.procesos||[];
-const MCOLS=['#1565c0','#2e7d32','#6a1b9a','#c62828','#e65100','#00695c','#4527a0','#ad1457','#0277bd','#558b2f'];
+// MCOLS ya está declarado globalmente en planificacion.js (se reutiliza aquí).
 
 function togFija(){
   const on=document.getElementById('chk-fija').checked;
@@ -14,7 +14,7 @@ function addPart(){
   const idx=particiones.length; particiones.push(256);
   const d=document.createElement('div'); d.className='part-row';
   d.innerHTML=`<div class="pdot" style="background:${MCOLS[idx%MCOLS.length]}"></div>
-    <span style="font-size:11px;color:#7a7a7a;width:65px">Part. ${idx+1}</span>
+    <span style="font-size:11px;color:var(--app-text-muted);width:65px">Part. ${idx+1}</span>
     <input type="number" min="1" value="256" onchange="particiones[${idx}]=parseInt(this.value)||256">`;
   document.getElementById('part-list').appendChild(d);
 }
@@ -61,14 +61,14 @@ function ejMem(algo){
   document.getElementById('m-asig').textContent=asig.length;
   document.getElementById('m-rech').textContent=noAsig.length;
   document.getElementById('mem-bar').textContent=`Usado: ${usada} KB | Libre: ${total-usada} KB | Total: ${total} KB`;
-  document.getElementById('tbl-mem').innerHTML=asig.length?asig.map(a=>`<tr><td class="pid">${a.pid}</td><td>${a.tam} KB</td><td>${a.part}</td><td>${a.base}</td><td>${a.limite}</td><td style="color:#4caf50">Asignado</td></tr>`).join(''):'<tr><td colspan="6" style="text-align:center;color:#5a5a5a;padding:14px">Sin asignaciones.</td></tr>';
-  document.getElementById('tbl-noasig').innerHTML=noAsig.length?noAsig.map(p=>`<tr><td class="pid">${p.id}</td><td>${p.tamano||'?'} KB</td><td style="color:#f44336">${p.motivo}</td></tr>`).join(''):'<tr><td colspan="3" style="text-align:center;color:#5a5a5a;padding:14px">Sin rechazados.</td></tr>';
+  document.getElementById('tbl-mem').innerHTML=asig.length?asig.map(a=>`<tr><td class="pid">${a.pid}</td><td>${a.tam} KB</td><td>${a.part}</td><td>${a.base}</td><td>${a.limite}</td><td style="color:#4caf50">Asignado</td></tr>`).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--app-text-muted);padding:14px">Sin asignaciones.</td></tr>';
+  document.getElementById('tbl-noasig').innerHTML=noAsig.length?noAsig.map(p=>`<tr><td class="pid">${p.id}</td><td>${p.tamano||'?'} KB</td><td style="color:#f44336">${p.motivo}</td></tr>`).join(''):'<tr><td colspan="3" style="text-align:center;color:var(--app-text-muted);padding:14px">Sin rechazados.</td></tr>';
 }
 function renderMapaFijo(bloques,tams,total){
   document.getElementById('mem-vis').innerHTML=bloques.map((b,i)=>{
     const pct=(b.tam/total*100).toFixed(1),col=MCOLS[i%MCOLS.length];
     return b.pid?`<div class="mv" style="width:${pct}%;background:${col}99"><span>${b.pid}</span><span style="font-size:7px;opacity:.7">${b.usado}KB</span></div>`
-      :`<div class="mv" style="width:${pct}%;background:#1a2a1a;color:#3a5a3a">LIBRE</div>`;
+      :`<div class="mv" style="width:${pct}%;background:var(--app-libre-bg);color:var(--app-libre-text)">LIBRE</div>`;
   }).join('');
 }
 function renderMapaDin(mem,total){
@@ -76,23 +76,23 @@ function renderMapaDin(mem,total){
   document.getElementById('mem-vis').innerHTML=mem.map(b=>{
     const pct=(b.tam/total*100).toFixed(1);
     if(b.pid){const col=MCOLS[ci++%MCOLS.length];return `<div class="mv" style="width:${pct}%;background:${col}99"><span>${b.pid}</span><span style="font-size:7px;opacity:.7">${b.tam}KB</span></div>`;}
-    return `<div class="mv" style="width:${pct}%;background:#1a2a1a;color:#3a5a3a">LIBRE</div>`;
+    return `<div class="mv" style="width:${pct}%;background:var(--app-libre-bg);color:var(--app-libre-text)">LIBRE</div>`;
   }).join('');
 }
 function limpiarMem(){
-  document.getElementById('mem-vis').innerHTML='<div class="mv" style="width:100%;background:#1a2a1a;color:#3a5a3a">LIBRE</div>';
+  document.getElementById('mem-vis').innerHTML='<div class="mv" style="width:100%;background:var(--app-libre-bg);color:var(--app-libre-text)">LIBRE</div>';
   document.getElementById('mem-bar').textContent='—';
   ['m-usada','m-libre','m-algo','m-frag'].forEach(id=>document.getElementById(id).textContent='—');
   document.getElementById('m-asig').textContent='0'; document.getElementById('m-rech').textContent='0';
-  document.getElementById('tbl-mem').innerHTML='<tr><td colspan="6" style="text-align:center;color:#5a5a5a;padding:14px">Sin asignaciones.</td></tr>';
-  document.getElementById('tbl-noasig').innerHTML='<tr><td colspan="3" style="text-align:center;color:#5a5a5a;padding:14px">Sin rechazados.</td></tr>';
+  document.getElementById('tbl-mem').innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--app-text-muted);padding:14px">Sin asignaciones.</td></tr>';
+  document.getElementById('tbl-noasig').innerHTML='<tr><td colspan="3" style="text-align:center;color:var(--app-text-muted);padding:14px">Sin rechazados.</td></tr>';
   document.getElementById('m-modo').textContent=document.getElementById('chk-fija').checked?'Particiones Fijas':'Dinámica';
   // técnicas avanzadas
-  document.getElementById('mem-blocks-grid').innerHTML='<div class="blk libre" style="grid-column:1/-1;text-align:center;font-size:10px;color:#3a5a3a;padding:8px">Configura y simula</div>';
+  document.getElementById('mem-blocks-grid').innerHTML='<div class="blk libre" style="grid-column:1/-1;text-align:center;font-size:10px;color:var(--app-libre-text);padding:8px">Configura y simula</div>';
   document.getElementById('mem-leyenda').innerHTML='';
   document.getElementById('mem-blk-info').textContent='';
-  document.getElementById('tbl-mem-avz-body').innerHTML='<tr><td colspan="5" style="text-align:center;color:#5a5a5a;padding:14px">Sin asignaciones.</td></tr>';
-  document.getElementById('mem-estructura-body').innerHTML='<span style="color:#5a5a5a;font-size:11px">Sin datos.</span>';
+  document.getElementById('tbl-mem-avz-body').innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--app-text-muted);padding:14px">Sin asignaciones.</td></tr>';
+  document.getElementById('mem-estructura-body').innerHTML='<span style="color:var(--app-text-muted);font-size:11px">Sin datos.</span>';
 }
 
 function memColor(pid){
@@ -208,36 +208,36 @@ function renderMemAvanzado(bloques,asig,noAsig,total,blk,ptSize){
   document.getElementById('m-frag').textContent=frag.toFixed(1)+' KB';
 
   document.getElementById('mem-leyenda').innerHTML=asig.map(a=>
-    `<span style="color:#aaa">■ <span style="color:${memColor(a.pid)}">${a.pid}</span></span>`).join(' ');
+    `<span style="color:var(--app-text-muted)">■ <span style="color:${memColor(a.pid)}">${a.pid}</span></span>`).join(' ');
 
   const filasAsig=asig.map(a=>`<tr><td class="pid">${a.pid}</td><td>${a.tam} KB</td><td>${a.bloqReq}</td><td>${a.asignados.join(', ')}</td><td style="color:#4caf50">Asignado</td></tr>`);
   const filasNo=noAsig.map(p=>`<tr><td class="pid">${p.id}</td><td>${p.tamano||'?'} KB</td><td>—</td><td>—</td><td style="color:#f44336">${p.motivo}</td></tr>`);
-  document.getElementById('tbl-mem-avz-body').innerHTML=(filasAsig.concat(filasNo)).join('')||'<tr><td colspan="5" style="text-align:center;color:#5a5a5a;padding:14px">Sin asignaciones.</td></tr>';
+  document.getElementById('tbl-mem-avz-body').innerHTML=(filasAsig.concat(filasNo)).join('')||'<tr><td colspan="5" style="text-align:center;color:var(--app-text-muted);padding:14px">Sin asignaciones.</td></tr>';
 
-  document.getElementById('tbl-noasig').innerHTML=noAsig.length?noAsig.map(p=>`<tr><td class="pid">${p.id}</td><td>${p.tamano||'?'} KB</td><td style="color:#f44336">${p.motivo}</td></tr>`).join(''):'<tr><td colspan="3" style="text-align:center;color:#5a5a5a;padding:14px">Sin rechazados.</td></tr>';
+  document.getElementById('tbl-noasig').innerHTML=noAsig.length?noAsig.map(p=>`<tr><td class="pid">${p.id}</td><td>${p.tamano||'?'} KB</td><td style="color:#f44336">${p.motivo}</td></tr>`).join(''):'<tr><td colspan="3" style="text-align:center;color:var(--app-text-muted);padding:14px">Sin rechazados.</td></tr>';
 
   const est=document.getElementById('mem-estructura-body');
   if(memTecnica==='bitmap'){
     const bits=bloques.map(b=>b.libre?'0':'1').join('');
     const agrupado=bits.match(/.{1,8}/g)?.join(' ')||bits;
-    est.innerHTML=`<div style="font-size:11px;color:#7a7a7a;margin-bottom:6px">Vector de bits (0 = libre, 1 = ocupado):</div>
-      <div style="font-family:monospace;font-size:12px;color:#4fc3f7;word-break:break-all;line-height:1.7">${agrupado}</div>
-      <div style="font-size:10px;color:#5a5a5a;margin-top:8px">${bloques.length} bits totales — 1 bit por bloque de ${blk} KB.</div>`;
+    est.innerHTML=`<div style="font-size:11px;color:var(--app-text-muted);margin-bottom:6px">Vector de bits (0 = libre, 1 = ocupado):</div>
+      <div style="font-family:monospace;font-size:12px;color:var(--app-accent);word-break:break-all;line-height:1.7">${agrupado}</div>
+      <div style="font-size:10px;color:var(--app-text-muted);margin-top:8px">${bloques.length} bits totales — 1 bit por bloque de ${blk} KB.</div>`;
   } else if(memTecnica==='fat'){
     const filas=bloques.map(b=>`<tr><td>${b.id}</td><td class="pid">${b.libre?'—':b.pid}</td><td>${b.libre?'LIBRE':b.next}</td></tr>`).join('');
-    est.innerHTML=`<div style="font-size:10px;color:#7a7a7a;margin-bottom:6px">Tabla de asignación de archivos: cada entrada apunta al siguiente bloque de la cadena (o EOF).</div>
+    est.innerHTML=`<div style="font-size:10px;color:var(--app-text-muted);margin-bottom:6px">Tabla de asignación de archivos: cada entrada apunta al siguiente bloque de la cadena (o EOF).</div>
       <div class="tw" style="max-height:220px"><table><thead><tr><th>Bloque</th><th>Proceso</th><th>Siguiente</th></tr></thead><tbody>${filas}</tbody></table></div>`;
   } else if(memTecnica==='extension'){
     est.innerHTML=(asig.map(a=>`<div style="margin-bottom:6px"><span class="pid">${a.pid}</span>: `+
       a.extents.map(e=>`[${e.start}–${e.start+e.len-1}]`).join(' + ')+
-      ` <span style="color:#7a7a7a">(${a.extents.length} extensión${a.extents.length>1?'es':''})</span></div>`).join(''))
-      ||'<span style="color:#5a5a5a;font-size:11px">Sin datos.</span>';
+      ` <span style="color:var(--app-text-muted)">(${a.extents.length} extensión${a.extents.length>1?'es':''})</span></div>`).join(''))
+      ||'<span style="color:var(--app-text-muted);font-size:11px">Sin datos.</span>';
   } else if(memTecnica==='multinivel'){
     let filas='';
     asig.forEach(a=>{a.paginas.forEach(pg=>{filas+=`<tr><td class="pid">${a.pid}</td><td>${pg.pagina}</td><td>${pg.dir}</td><td>${pg.pt}</td><td>${pg.marco}</td></tr>`;});});
-    est.innerHTML=`<div style="font-size:10px;color:#7a7a7a;margin-bottom:6px">Entradas por tabla de páginas: ${ptSize} (Directorio → Tabla de Páginas → Marco)</div>
+    est.innerHTML=`<div style="font-size:10px;color:var(--app-text-muted);margin-bottom:6px">Entradas por tabla de páginas: ${ptSize} (Directorio → Tabla de Páginas → Marco)</div>
       <div class="tw" style="max-height:220px"><table><thead><tr><th>Proceso</th><th>Página</th><th>Dir.</th><th>Tabla Pág.</th><th>Marco</th></tr></thead>
-      <tbody>${filas||'<tr><td colspan="5" style="text-align:center;color:#5a5a5a;padding:10px">Sin datos.</td></tr>'}</tbody></table></div>`;
+      <tbody>${filas||'<tr><td colspan="5" style="text-align:center;color:var(--app-text-muted);padding:10px">Sin datos.</td></tr>'}</tbody></table></div>`;
   }
 }
 
